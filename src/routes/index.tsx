@@ -15,7 +15,7 @@ export const Route = createFileRoute("/")({
         property: "og:description",
         content: "A fast, focused workout tracker. Log exercises, sets, reps and weights.",
       },
-et  ],
+    ],
   }),
   component: Index,
 });
@@ -38,7 +38,7 @@ const QUICK_EXERCISES = [
 
 function Index() {
   const [entries, setEntries] = useState<SetEntry[]>([]);
-  const [exercise, setExercise] = useState(QUICK_EXERCISES[0]);
+  const [exercise, setExercise] = useState<string>(QUICK_EXERCISES[0]!);
   const [weight, setWeight] = useState("");
   const [reps, setReps] = useState("");
   const [nextId, setNextId] = useState(1);
