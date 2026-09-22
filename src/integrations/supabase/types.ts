@@ -17,22 +17,40 @@ export type Database = {
       profiles: {
         Row: {
           created_at: string
+          days_per_week: number | null
           display_name: string | null
+          equipment: Database["public"]["Enums"]["equipment_access"] | null
+          experience: Database["public"]["Enums"]["experience_level"] | null
+          goal: Database["public"]["Enums"]["training_goal"] | null
           id: string
+          onboarded_at: string | null
+          session_minutes: number | null
           updated_at: string
           weight_unit: Database["public"]["Enums"]["weight_unit"]
         }
         Insert: {
           created_at?: string
+          days_per_week?: number | null
           display_name?: string | null
+          equipment?: Database["public"]["Enums"]["equipment_access"] | null
+          experience?: Database["public"]["Enums"]["experience_level"] | null
+          goal?: Database["public"]["Enums"]["training_goal"] | null
           id: string
+          onboarded_at?: string | null
+          session_minutes?: number | null
           updated_at?: string
           weight_unit?: Database["public"]["Enums"]["weight_unit"]
         }
         Update: {
           created_at?: string
+          days_per_week?: number | null
           display_name?: string | null
+          equipment?: Database["public"]["Enums"]["equipment_access"] | null
+          experience?: Database["public"]["Enums"]["experience_level"] | null
+          goal?: Database["public"]["Enums"]["training_goal"] | null
           id?: string
+          onboarded_at?: string | null
+          session_minutes?: number | null
           updated_at?: string
           weight_unit?: Database["public"]["Enums"]["weight_unit"]
         }
@@ -46,6 +64,13 @@ export type Database = {
       [_ in never]: never
     }
     Enums: {
+      equipment_access: "full_gym" | "dumbbells_only" | "bodyweight_only"
+      experience_level: "beginner" | "intermediate" | "advanced"
+      training_goal:
+        | "strength"
+        | "build_muscle"
+        | "lose_fat"
+        | "general_fitness"
       weight_unit: "kg" | "lb"
     }
     CompositeTypes: {
@@ -174,6 +199,14 @@ export type CompositeTypes<
 export const Constants = {
   public: {
     Enums: {
+      equipment_access: ["full_gym", "dumbbells_only", "bodyweight_only"],
+      experience_level: ["beginner", "intermediate", "advanced"],
+      training_goal: [
+        "strength",
+        "build_muscle",
+        "lose_fat",
+        "general_fitness",
+      ],
       weight_unit: ["kg", "lb"],
     },
   },
