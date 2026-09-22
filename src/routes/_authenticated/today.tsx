@@ -1,5 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { AppScreen, ComingSoon } from "@/components/AppScreen";
+import { CheckinCard } from "@/components/CheckinCard";
 
 export const Route = createFileRoute("/_authenticated/today")({
   head: () => ({
