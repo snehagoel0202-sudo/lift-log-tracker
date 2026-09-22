@@ -22,6 +22,13 @@
       "when": 1790096573476,
       "tag": "0002_create_exercises_and_workouts",
       "breakpoints": true
+    },
+    {
+      "idx": 3,
+      "version": "7",
+      "when": 1790097645195,
+      "tag": "0003_create_checkins",
+      "breakpoints": true
     }
   ]
 }

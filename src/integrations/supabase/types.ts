@@ -14,6 +14,48 @@ export type Database = {
   }
   public: {
     Tables: {
+      checkins: {
+        Row: {
+          created_at: string
+          date: string
+          energy: number | null
+          id: string
+          notes: string | null
+          pain: boolean
+          pain_area: string | null
+          sleep: number | null
+          soreness: number | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          date: string
+          energy?: number | null
+          id?: string
+          notes?: string | null
+          pain?: boolean
+          pain_area?: string | null
+          sleep?: number | null
+          soreness?: number | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          date?: string
+          energy?: number | null
+          id?: string
+          notes?: string | null
+          pain?: boolean
+          pain_area?: string | null
+          sleep?: number | null
+          soreness?: number | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       exercises: {
         Row: {
           aliases: string[]
