@@ -17,6 +17,7 @@ export const Route = createFileRoute("/_authenticated/today")({
 function Today() {
   return (
     <AppScreen title="Today" subtitle="Your session for today will show up here.">
+      <CheckinCard />
       <ComingSoon what="Today's workout" />
     </AppScreen>
   );
