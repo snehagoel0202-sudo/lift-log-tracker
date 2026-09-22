@@ -29,6 +29,13 @@
       "when": 1790097645195,
       "tag": "0003_create_checkins",
       "breakpoints": true
+    },
+    {
+      "idx": 4,
+      "version": "7",
+      "when": 1790098029473,
+      "tag": "0004_create_plans",
+      "breakpoints": true
     }
   ]
 }

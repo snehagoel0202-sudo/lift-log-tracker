@@ -95,6 +95,96 @@ export type Database = {
         }
         Relationships: []
       }
+      plan_items: {
+        Row: {
+          created_at: string
+          day_number: number
+          exercise_id: string
+          id: string
+          plan_id: string
+          position: number
+          rationale: string | null
+          rep_max: number
+          rep_min: number
+          sets: number
+          target_weight: number | null
+          unit: Database["public"]["Enums"]["weight_unit"]
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          day_number: number
+          exercise_id: string
+          id?: string
+          plan_id: string
+          position?: number
+          rationale?: string | null
+          rep_max: number
+          rep_min: number
+          sets: number
+          target_weight?: number | null
+          unit?: Database["public"]["Enums"]["weight_unit"]
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          day_number?: number
+          exercise_id?: string
+          id?: string
+          plan_id?: string
+          position?: number
+          rationale?: string | null
+          rep_max?: number
+          rep_min?: number
+          sets?: number
+          target_weight?: number | null
+          unit?: Database["public"]["Enums"]["weight_unit"]
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "plan_items_exercise_id_fkey"
+            columns: ["exercise_id"]
+            isOneToOne: false
+            referencedRelation: "exercises"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "plan_items_plan_id_fkey"
+            columns: ["plan_id"]
+            isOneToOne: false
+            referencedRelation: "plans"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      plans: {
+        Row: {
+          created_at: string
+          id: string
+          status: Database["public"]["Enums"]["plan_status"]
+          summary: string | null
+          user_id: string
+          week_start: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          status?: Database["public"]["Enums"]["plan_status"]
+          summary?: string | null
+          user_id: string
+          week_start: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          status?: Database["public"]["Enums"]["plan_status"]
+          summary?: string | null
+          user_id?: string
+          week_start?: string
+        }
+        Relationships: []
+      }
       profiles: {
         Row: {
           created_at: string
@@ -241,6 +331,7 @@ export type Database = {
         | "bodyweight"
       experience_level: "beginner" | "intermediate" | "advanced"
       impact_level: "low" | "moderate" | "high"
+      plan_status: "draft" | "approved" | "archived"
       training_goal:
         | "strength"
         | "build_muscle"
@@ -385,6 +476,7 @@ export const Constants = {
       ],
       experience_level: ["beginner", "intermediate", "advanced"],
       impact_level: ["low", "moderate", "high"],
+      plan_status: ["draft", "approved", "archived"],
       training_goal: [
         "strength",
         "build_muscle",
