@@ -5,6 +5,7 @@ export type PlanStatus = "draft" | "approved" | "archived";
 export type PlanItem = {
   id: string;
   day_number: number;
+  exercise_id: string;
   position: number;
   sets: number;
   rep_min: number;
