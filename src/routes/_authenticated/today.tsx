@@ -4,6 +4,7 @@ import { useEffect, useMemo, useState } from "react";
 import { useServerFn } from "@tanstack/react-start";
 import { AppScreen } from "@/components/AppScreen";
 import { CheckinCard } from "@/components/CheckinCard";
+import { EmptyState, ErrorState, LoadingBlock } from "@/components/ScreenState";
 import { localDateString } from "@/lib/checkins";
 import { approvedPlanQueryOptions, groupByDay, type PlanItem } from "@/lib/plans";
 import { planSessionsQueryOptions } from "@/lib/workouts";
@@ -117,7 +118,20 @@ function Today() {
     return (
       <AppScreen title="Today">
         <CheckinCard />
-        <p className="text-sm text-muted-foreground">Loading your workout…</p>
+        <LoadingBlock lines={4} label="Loading your workout" />
+      </AppScreen>
+    );
+  }
+
+  if (planQuery.isError) {
+    return (
+      <AppScreen title="Today">
+        <CheckinCard />
+        <ErrorState
+          message="We couldn't load today's workout."
+          onRetry={() => planQuery.refetch()}
+          retrying={planQuery.isFetching}
+        />
       </AppScreen>
     );
   }
@@ -126,18 +140,17 @@ function Today() {
     return (
       <AppScreen title="Today" subtitle="No approved plan yet.">
         <CheckinCard />
-        <div className="rounded-2xl border border-border bg-card p-6 text-center">
-          <p className="font-semibold text-foreground">You don't have a plan yet</p>
-          <p className="mt-1 text-sm text-muted-foreground">
-            Build a weekly plan first, then your sessions show up here.
-          </p>
+        <EmptyState
+          title="You don't have a plan yet"
+          hint="Build a weekly plan first, then your sessions show up here."
+        >
           <Link
             to="/plan"
-            className="mt-4 inline-flex h-12 items-center justify-center rounded-xl bg-primary px-6 font-semibold text-primary-foreground"
+            className="inline-flex min-h-12 items-center justify-center rounded-xl bg-primary px-6 font-semibold text-primary-foreground"
           >
             Go to Plan
           </Link>
-        </div>
+        </EmptyState>
       </AppScreen>
     );
   }
