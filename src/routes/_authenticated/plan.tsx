@@ -117,17 +117,50 @@ function PlanPage() {
           {approved.isLoading ? (
             <p className="mt-2 text-sm text-muted-foreground">Loading your plan…</p>
           ) : approved.data ? (
-            <div className="mt-2 space-y-5">
-              <div className="rounded-2xl border border-border bg-card p-4">
-                <p className="text-xs font-semibold uppercase tracking-wide text-primary">
-                  Week of {approved.data.week_start}
-                </p>
-                {approved.data.summary ? (
-                  <p className="mt-1 text-sm text-foreground">{approved.data.summary}</p>
-                ) : null}
+            draft.data && !showApproved ? (
+              <button
+                type="button"
+                onClick={() => setShowApproved(true)}
+                className="mt-2 flex min-h-14 w-full items-center justify-between rounded-2xl border border-border bg-card px-5 py-3 text-left"
+              >
+                <span className="flex flex-col">
+                  <span className="font-semibold text-foreground">
+                    Week of {approved.data.week_start}
+                  </span>
+                  <span className="text-sm text-muted-foreground">
+                    {approved.data.items.length} exercises · tap to view
+                  </span>
+                </span>
+                <span aria-hidden className="text-muted-foreground">
+                  ▾
+                </span>
+              </button>
+            ) : (
+              <div className="mt-2 space-y-5">
+                <div className="rounded-2xl border border-border bg-card p-4">
+                  <div className="flex items-start justify-between gap-3">
+                    <div>
+                      <p className="text-xs font-semibold uppercase tracking-wide text-primary">
+                        Week of {approved.data.week_start}
+                      </p>
+                      {approved.data.summary ? (
+                        <p className="mt-1 text-sm text-foreground">{approved.data.summary}</p>
+                      ) : null}
+                    </div>
+                    {draft.data ? (
+                      <button
+                        type="button"
+                        onClick={() => setShowApproved(false)}
+                        className="shrink-0 text-sm text-muted-foreground underline underline-offset-4"
+                      >
+                        Collapse
+                      </button>
+                    ) : null}
+                  </div>
+                </div>
+                <PlanDays plan={approved.data} />
               </div>
-              <PlanDays plan={approved.data} />
-            </div>
+            )
           ) : (
             <div className="mt-2 rounded-2xl border border-dashed border-border p-8 text-center">
               <p className="font-semibold text-foreground">No plan yet</p>
