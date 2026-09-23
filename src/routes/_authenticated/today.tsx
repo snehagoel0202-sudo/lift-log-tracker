@@ -21,7 +21,14 @@ export const Route = createFileRoute("/_authenticated/today")({
   component: Today,
 });
 
-type SetRow = { done: boolean; weight: string; reps: string; rpe: string };
+type SetRow = {
+  done: boolean;
+  weight: string;
+  reps: string;
+  rpe: string;
+  weightEdited: boolean;
+  repsEdited: boolean;
+};
 
 function rowsForItem(item: PlanItem): SetRow[] {
   return Array.from({ length: item.sets }, () => ({
@@ -29,6 +36,8 @@ function rowsForItem(item: PlanItem): SetRow[] {
     weight: item.target_weight == null ? "" : String(item.target_weight),
     reps: String(item.rep_max),
     rpe: "",
+    weightEdited: false,
+    repsEdited: false,
   }));
 }
 
@@ -85,7 +94,21 @@ function Today() {
     setSavedCount(null);
     setRows((current) => {
       const list = [...(current[itemId] ?? [])];
-      list[index] = { ...list[index]!, ...patch };
+      const row = { ...list[index]!, ...patch };
+      if (patch.weight !== undefined) row.weightEdited = true;
+      if (patch.reps !== undefined) row.repsEdited = true;
+      list[index] = row;
+      // Carry an edited value down to later sets the user hasn't touched.
+      if (patch.weight !== undefined) {
+        for (let j = index + 1; j < list.length; j++) {
+          if (!list[j]!.weightEdited) list[j] = { ...list[j]!, weight: row.weight };
+        }
+      }
+      if (patch.reps !== undefined) {
+        for (let j = index + 1; j < list.length; j++) {
+          if (!list[j]!.repsEdited) list[j] = { ...list[j]!, reps: row.reps };
+        }
+      }
       return { ...current, [itemId]: list };
     });
   }
@@ -283,18 +306,21 @@ function Today() {
             <button
               type="button"
               onClick={() =>
-                setRows((current) => ({
-                  ...current,
-                  [item.id]: [
-                    ...(current[item.id] ?? []),
-                    {
-                      done: false,
-                      weight: item.target_weight == null ? "" : String(item.target_weight),
-                      reps: String(item.rep_max),
-                      rpe: "",
-                    },
-                  ],
-                }))
+                setRows((current) => {
+                  const existing = current[item.id] ?? [];
+                  const last = existing[existing.length - 1];
+                  const newRow: SetRow = {
+                    done: false,
+                    weight:
+                      last?.weight ??
+                      (item.target_weight == null ? "" : String(item.target_weight)),
+                    reps: last?.reps ?? String(item.rep_max),
+                    rpe: "",
+                    weightEdited: false,
+                    repsEdited: false,
+                  };
+                  return { ...current, [item.id]: [...existing, newRow] };
+                })
               }
               className="mt-3 h-10 w-full rounded-xl border border-border text-sm font-semibold text-foreground"
             >
