@@ -311,7 +311,7 @@ function LogPage() {
                     selected={workoutDate}
                     onSelect={setWorkoutDate}
                     disabled={[{ after: new Date() }]}
-                    defaultMonth={workoutDate}
+                    {...(workoutDate ? { defaultMonth: workoutDate } : {})}
                     initialFocus
                     className={cn("p-3 pointer-events-auto")}
                   />
