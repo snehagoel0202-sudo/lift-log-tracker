@@ -49,6 +49,8 @@ export function useSpeechRecognition(onFinalChunk: (text: string) => void) {
   const restartTimerRef = useRef<number | null>(null);
   const startedAtRef = useRef(0);
   const shortRunsRef = useRef(0);
+  const sessionHeardRef = useRef(false);
+
   const callbackRef = useRef(onFinalChunk);
   callbackRef.current = onFinalChunk;
 
@@ -89,7 +91,10 @@ export function useSpeechRecognition(onFinalChunk: (text: string) => void) {
     recognition.continuous = true;
     recognition.interimResults = true;
 
-    recognition.onspeechstart = () => setHeardSomething(true);
+    recognition.onspeechstart = () => {
+      sessionHeardRef.current = true;
+      setHeardSomething(true);
+    };
 
     recognition.onresult = (event) => {
       let finalText = "";
@@ -101,9 +106,11 @@ export function useSpeechRecognition(onFinalChunk: (text: string) => void) {
         else interimText += result[0].transcript;
       }
       if (finalText || interimText) {
+        sessionHeardRef.current = true;
         setHeardSomething(true);
         shortRunsRef.current = 0;
       }
+
       setInterim(interimText);
       const trimmed = finalText.trim();
       if (trimmed) {
