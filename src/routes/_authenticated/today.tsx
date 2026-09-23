@@ -4,6 +4,8 @@ import { useEffect, useMemo, useState } from "react";
 import { useServerFn } from "@tanstack/react-start";
 import { AppScreen } from "@/components/AppScreen";
 import { CheckinCard } from "@/components/CheckinCard";
+import { DemoVideo } from "@/components/DemoVideo";
+
 import { EmptyState, ErrorState, LoadingBlock } from "@/components/ScreenState";
 import { localDateString } from "@/lib/checkins";
 import { approvedPlanQueryOptions, groupByDay, type PlanItem } from "@/lib/plans";
@@ -259,6 +261,9 @@ function Today() {
                 {item.rep_min}–{item.rep_max} reps
               </span>
             </div>
+
+            <DemoVideo exerciseName={item.exercises?.name} />
+
 
             <div className="mt-3 space-y-2">
               <div className="flex items-center gap-1.5 text-[11px] text-muted-foreground">
