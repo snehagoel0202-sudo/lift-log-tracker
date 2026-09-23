@@ -131,12 +131,14 @@ export function useSpeechRecognition(onFinalChunk: (text: string) => void) {
       setInterim("");
 
       const ranFor = Date.now() - startedAtRef.current;
-      if (ranFor < 400) shortRunsRef.current += 1;
+      // Only sessions that die instantly WITHOUT hearing anything count as failures.
+      // A normal pause (phones end the session constantly) must never stop us.
+      if (ranFor < 700 && !sessionHeardRef.current) shortRunsRef.current += 1;
       else shortRunsRef.current = 0;
 
-      // Sessions that die instantly mean the mic is unavailable (e.g. blocked in
-      // an embedded preview). Never loop on that — it would freeze the page.
-      if (shortRunsRef.current >= 3) {
+      // Repeated instant failures mean the mic is unavailable (e.g. blocked in an
+      // embedded preview). Never loop on that — it would freeze the page.
+      if (shortRunsRef.current >= 4) {
         wantListeningRef.current = false;
         setError(
           "The microphone isn't available here. Allow mic access, or open LiftLog in its own browser tab. You can still type or use your keyboard's mic.",
@@ -153,12 +155,13 @@ export function useSpeechRecognition(onFinalChunk: (text: string) => void) {
             wantListeningRef.current = false;
             setListening(false);
           }
-        }, 350);
+        }, 200);
         return;
       }
 
       setListening(false);
     };
+
 
     recognitionRef.current = recognition;
     startedAtRef.current = Date.now();
