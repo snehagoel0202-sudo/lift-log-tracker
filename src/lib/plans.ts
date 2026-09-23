@@ -34,6 +34,7 @@ async function fetchPlanByStatus(status: PlanStatus): Promise<Plan | null> {
     )
     .eq("user_id", userData.user.id)
     .eq("status", status)
+    .is("deleted_at", null)
     .order("created_at", { ascending: false })
     .limit(1)
     .maybeSingle();
@@ -76,6 +77,7 @@ export const archivedPlansQueryOptions = {
       )
       .eq("user_id", userData.user.id)
       .eq("status", "archived")
+      .is("deleted_at", null)
       .order("week_start", { ascending: false });
     if (error) throw error;
     return (data ?? []).map((row) => {
@@ -106,6 +108,7 @@ export async function fetchPlanById(planId: string): Promise<Plan | null> {
     )
     .eq("user_id", userData.user.id)
     .eq("id", planId)
+    .is("deleted_at", null)
     .maybeSingle();
   if (error) throw error;
   if (!data) return null;
