@@ -7,7 +7,10 @@ import {
   type PlanExercise,
 } from "./plan-rules";
 
-const DateInput = z.object({ today: z.string().regex(/^\d{4}-\d{2}-\d{2}$/) });
+const DateInput = z.object({
+  today: z.string().regex(/^\d{4}-\d{2}-\d{2}$/),
+  scope: z.enum(["day", "week"]).default("week"),
+});
 
 function shiftDays(dateString: string, days: number) {
   const [y, m, d] = dateString.split("-").map(Number);
