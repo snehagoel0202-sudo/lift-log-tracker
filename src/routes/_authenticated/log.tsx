@@ -147,14 +147,18 @@ function LogPage() {
                   <button
                     type="button"
                     onClick={speech.stop}
-                    className="h-11 rounded-xl border border-border bg-card px-4 text-sm font-semibold text-foreground"
+                    className="h-11 rounded-xl border border-primary bg-primary px-5 text-sm font-semibold text-primary-foreground"
                   >
                     Stop
                   </button>
                 </div>
-                {speech.interim ? (
-                  <p className="mt-2 text-sm text-muted-foreground">{speech.interim}…</p>
-                ) : null}
+                <p className="mt-2 text-sm text-muted-foreground">
+                  {speech.interim
+                    ? `${speech.interim}…`
+                    : speech.heardSomething
+                      ? "Got it — keep going, or tap Stop when you're done."
+                      : "Waiting to hear you… speak now, then tap Stop."}
+                </p>
               </div>
             ) : (
               <button
@@ -180,14 +184,15 @@ function LogPage() {
               </button>
             )
           ) : null}
+          {speech.error ? <p className="text-sm text-destructive">{speech.error}</p> : null}
           <textarea
             value={speech.listening && speech.interim ? `${text} ${speech.interim}`.trimStart() : text}
             onChange={(event) => setText(event.target.value)}
-            readOnly={speech.listening}
             placeholder={HINT}
             rows={6}
             className="w-full rounded-2xl border border-border bg-background p-4 text-base text-foreground placeholder:text-muted-foreground"
           />
+
           {error ? <p className="text-sm text-destructive">{error}</p> : null}
           <button
             type="button"
