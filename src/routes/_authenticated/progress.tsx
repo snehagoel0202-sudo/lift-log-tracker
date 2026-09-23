@@ -42,7 +42,7 @@ export const Route = createFileRoute("/_authenticated/progress")({
 });
 
 const inputClass =
-  "h-11 w-full rounded-xl border border-border bg-background px-3 text-center text-base text-foreground";
+  "h-12 w-full min-w-0 rounded-xl border border-border bg-background px-1.5 text-center text-base text-foreground";
 
 function ProgressPage() {
   const historyQuery = useQuery(historyQueryOptions);

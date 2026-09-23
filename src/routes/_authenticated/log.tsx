@@ -35,7 +35,7 @@ type Row = {
 };
 
 const inputClass =
-  "h-11 w-full rounded-xl border border-border bg-background px-3 text-center text-base text-foreground";
+  "h-12 w-full min-w-0 rounded-xl border border-border bg-background px-1.5 text-center text-base text-foreground";
 const HINT =
   "Tap the mic on your keyboard and say what you did, e.g. 'Squats 60 kg 3 sets of 8, RPE 8'";
 
@@ -172,7 +172,7 @@ function LogPage() {
                 <select
                   value={row.exercise_id ?? ""}
                   onChange={(event) => update(index, { exercise_id: event.target.value || null })}
-                  className="mt-1 h-11 w-full rounded-xl border border-border bg-background px-3 text-base text-foreground"
+                  className="mt-1 h-12 w-full rounded-xl border border-border bg-background px-3 text-base text-foreground"
                 >
                   <option value="">Pick an exercise…</option>
                   {exercises.map((exercise) => (
@@ -182,7 +182,7 @@ function LogPage() {
                   ))}
                 </select>
               </label>
-              <div className="grid grid-cols-4 gap-2">
+              <div className="grid grid-cols-4 gap-1.5">
                 <label className="block">
                   <span className="text-xs text-muted-foreground">Weight</span>
                   <input
