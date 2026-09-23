@@ -3,6 +3,8 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useState } from "react";
 import { useServerFn } from "@tanstack/react-start";
 import { AppScreen } from "@/components/AppScreen";
+import { DemoVideo } from "@/components/DemoVideo";
+
 import { EmptyState, ErrorState, LoadingBlock } from "@/components/ScreenState";
 import { localDateString } from "@/lib/checkins";
 import { approvePlan, discardPlan, recommendPlan } from "@/lib/plans.functions";
@@ -39,7 +41,9 @@ function ItemRow({ item }: { item: PlanItem }) {
       {item.rationale ? (
         <p className="mt-1 text-sm text-muted-foreground">{item.rationale}</p>
       ) : null}
+      <DemoVideo exerciseName={item.exercises?.name} />
     </li>
+
   );
 }
 

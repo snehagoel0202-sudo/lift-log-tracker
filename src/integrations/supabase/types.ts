@@ -70,6 +70,10 @@ export type Database = {
           muscle_group: string
           name: string
           postpartum_safe: boolean
+          video_channel: string | null
+          video_channel_url: string | null
+          video_id: string | null
+          video_title: string | null
           weight_step: number
         }
         Insert: {
@@ -82,6 +86,10 @@ export type Database = {
           muscle_group: string
           name: string
           postpartum_safe?: boolean
+          video_channel?: string | null
+          video_channel_url?: string | null
+          video_id?: string | null
+          video_title?: string | null
           weight_step?: number
         }
         Update: {
@@ -94,6 +102,10 @@ export type Database = {
           muscle_group?: string
           name?: string
           postpartum_safe?: boolean
+          video_channel?: string | null
+          video_channel_url?: string | null
+          video_id?: string | null
+          video_title?: string | null
           weight_step?: number
         }
         Relationships: []
