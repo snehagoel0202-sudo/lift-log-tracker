@@ -270,13 +270,15 @@ function Today() {
               </div>
               {(rows[item.id] ?? []).map((row, index) => (
                 <div key={index} className="flex items-center gap-1.5">
-                  <input
-                    type="checkbox"
-                    aria-label={`Set ${index + 1} done`}
-                    checked={row.done}
-                    onChange={(event) => update(item.id, index, { done: event.target.checked })}
-                    className="h-11 w-11 shrink-0 rounded-lg accent-primary"
-                  />
+                  <label className="flex h-12 w-11 shrink-0 items-center justify-center rounded-lg border border-border">
+                    <input
+                      type="checkbox"
+                      aria-label={`Set ${index + 1} done`}
+                      checked={row.done}
+                      onChange={(event) => update(item.id, index, { done: event.target.checked })}
+                      className="h-6 w-6 rounded accent-primary"
+                    />
+                  </label>
                   <input
                     inputMode="decimal"
                     value={row.weight}
