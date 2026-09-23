@@ -57,6 +57,13 @@
       "when": 1790159640268,
       "tag": "0007_expand_exercise_library_and_video_columns",
       "breakpoints": true
+    },
+    {
+      "idx": 8,
+      "version": "7",
+      "when": 1790167415900,
+      "tag": "0008_expand_exercise_library_patterns_and_variations",
+      "breakpoints": true
     }
   ]
 }
