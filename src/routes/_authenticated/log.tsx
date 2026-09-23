@@ -351,12 +351,87 @@ function LogPage() {
             </div>
           ))}
 
+          <div className="space-y-3 rounded-2xl border border-border p-4">
+            <div>
+              <p className="text-sm font-semibold text-foreground">Change something</p>
+              <p className="mt-1 text-sm text-muted-foreground">
+                Say what's wrong, e.g. “set 3 was 6 reps”. Only what you mention changes.
+              </p>
+            </div>
+            {fixSpeech.supported ? (
+              fixSpeech.listening ? (
+                <div className="rounded-xl border border-primary/50 bg-primary/10 p-3">
+                  <div className="flex items-center gap-3">
+                    <span className="relative flex h-3 w-3 shrink-0">
+                      <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-primary opacity-75" />
+                      <span className="relative inline-flex h-3 w-3 rounded-full bg-primary" />
+                    </span>
+                    <span className="flex-1 text-sm font-semibold text-foreground">Listening…</span>
+                    <button
+                      type="button"
+                      onClick={fixSpeech.stop}
+                      className="h-11 rounded-xl border border-primary bg-primary px-5 text-sm font-semibold text-primary-foreground"
+                    >
+                      Stop
+                    </button>
+                  </div>
+                  {fixSpeech.interim ? (
+                    <p className="mt-2 text-sm text-muted-foreground">{fixSpeech.interim}…</p>
+                  ) : null}
+                </div>
+              ) : (
+                <button
+                  type="button"
+                  onClick={() => void fixSpeech.start()}
+                  className="flex h-12 w-full items-center justify-center gap-2 rounded-xl border border-primary/60 bg-primary/10 font-semibold text-foreground"
+                >
+                  <svg
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="2"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    className="h-5 w-5 text-primary"
+                    aria-hidden="true"
+                  >
+                    <path d="M12 2a3 3 0 0 0-3 3v7a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3Z" />
+                    <path d="M19 10v2a7 7 0 0 1-14 0v-2" />
+                    <path d="M12 19v3" />
+                  </svg>
+                  Tap to speak
+                </button>
+              )
+            ) : null}
+            {fixSpeech.error ? <p className="text-sm text-destructive">{fixSpeech.error}</p> : null}
+            <textarea
+              value={
+                fixSpeech.listening && fixSpeech.interim
+                  ? `${correction} ${fixSpeech.interim}`.trimStart()
+                  : correction
+              }
+              onChange={(event) => setCorrection(event.target.value)}
+              placeholder="set 3 was 6 reps"
+              rows={2}
+              className="w-full rounded-xl border border-border bg-background p-3 text-base text-foreground placeholder:text-muted-foreground"
+            />
+            <button
+              type="button"
+              disabled={!correction.trim() || correct.isPending}
+              onClick={submitCorrection}
+              className="h-12 w-full rounded-xl border border-primary/60 bg-primary/10 font-semibold text-foreground disabled:opacity-50"
+            >
+              {correct.isPending ? "Updating…" : "Apply change"}
+            </button>
+          </div>
+
           {unmatched > 0 ? (
             <p className="text-sm text-muted-foreground">
               Pick an exercise for {unmatched} {unmatched === 1 ? "set" : "sets"} before saving.
             </p>
           ) : null}
           {error ? <p className="text-sm text-destructive">{error}</p> : null}
+
 
           <div className="flex gap-3">
             <button
