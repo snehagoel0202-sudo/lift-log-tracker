@@ -95,7 +95,7 @@ export const reviewWorkoutText = createServerFn({ method: "POST" })
 
     const counters = new Map<string, number>();
     const rows: ReviewRow[] = parsed.map((set) => {
-      const nameKey = set.exercise_name.trim().toLowerCase();
+      const nameKey = normalize(set.exercise_name);
       const seen = (counters.get(nameKey) ?? 0) + 1;
       counters.set(nameKey, seen);
       const unit = set.unit?.toLowerCase().startsWith("lb")
@@ -105,11 +105,13 @@ export const reviewWorkoutText = createServerFn({ method: "POST" })
           : null;
       return {
         exercise_name: set.exercise_name,
-        exercise_id: byName.get(nameKey) ?? null,
+        exercise_id: matchExercise(set.exercise_name),
         set_number: set.set_number ?? seen,
         weight: set.weight,
         unit,
-        reps: set.reps,
+        // An impossible rep count is a dictation artefact, never a real value: leave it blank
+        // for the user to fill in rather than storing a guess.
+        reps: set.reps != null && (set.reps < 1 || set.reps > 50) ? null : set.reps,
         rpe: set.rpe,
       };
     });
