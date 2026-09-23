@@ -1,5 +1,6 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { useState } from "react";
 import { useServerFn } from "@tanstack/react-start";
 import { AppScreen } from "@/components/AppScreen";
 import { localDateString } from "@/lib/checkins";
@@ -69,9 +70,17 @@ function PlanPage() {
 
   const invalidate = () => queryClient.invalidateQueries({ queryKey: ["plan"] });
 
+  const [choosingScope, setChoosingScope] = useState(false);
+  const [showApproved, setShowApproved] = useState(false);
+
   const recommend = useMutation({
-    mutationFn: () => recommendFn({ data: { today: localDateString() } }),
-    onSuccess: invalidate,
+    mutationFn: (scope: "day" | "week") =>
+      recommendFn({ data: { today: localDateString(), scope } }),
+    onSuccess: () => {
+      setChoosingScope(false);
+      setShowApproved(false);
+      invalidate();
+    },
   });
   const approve = useMutation({
     mutationFn: (planId: string) => approveFn({ data: { planId } }),
