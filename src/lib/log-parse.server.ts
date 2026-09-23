@@ -37,6 +37,9 @@ const SCHEMA = {
 const INSTRUCTIONS = [
   "You convert a person's free-text or dictated description of a finished workout into JSON only.",
   "Output one object per individual set. '3 sets of 8' means three objects with set_number 1, 2, 3.",
+  "The text comes from phone dictation, which often merges a spoken list of rep counts into one number with a thousands separator or no space. '1,010 and 8' means the sets 10, 10 and 8. '1,088' means 10, 8, 8. '810' means 8 and 10.",
+  "Reps per set are realistically 1 to 50. If a rep number is above 50, it is a merged list: split it into the separate rep counts, one set each, never output it as a single set.",
+  "A weight may legitimately be large (e.g. 100 kg), so only apply the splitting rule to rep counts.",
   "NEVER invent or guess a value. If the person did not say a weight, reps, RPE or unit, use null for it.",
   "Keep the unit exactly as said ('kg' or 'lb'). Never convert between units. If no unit was said, unit is null.",
   "exercise_name is the exercise words the person used, nothing added.",
