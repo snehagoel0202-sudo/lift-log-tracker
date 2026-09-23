@@ -163,7 +163,7 @@ function LogPage() {
             ) : (
               <button
                 type="button"
-                onClick={speech.start}
+                onClick={() => void speech.start()}
                 className="flex h-12 w-full items-center justify-center gap-2 rounded-xl border border-primary/60 bg-primary/10 font-semibold text-foreground"
               >
                 <svg
