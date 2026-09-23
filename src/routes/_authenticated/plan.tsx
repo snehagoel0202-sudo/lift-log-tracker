@@ -1,5 +1,6 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { useState } from "react";
 import { useServerFn } from "@tanstack/react-start";
 import { AppScreen } from "@/components/AppScreen";
 import { localDateString } from "@/lib/checkins";
@@ -69,9 +70,17 @@ function PlanPage() {
 
   const invalidate = () => queryClient.invalidateQueries({ queryKey: ["plan"] });
 
+  const [choosingScope, setChoosingScope] = useState(false);
+  const [showApproved, setShowApproved] = useState(false);
+
   const recommend = useMutation({
-    mutationFn: () => recommendFn({ data: { today: localDateString() } }),
-    onSuccess: invalidate,
+    mutationFn: (scope: "day" | "week") =>
+      recommendFn({ data: { today: localDateString(), scope } }),
+    onSuccess: () => {
+      setChoosingScope(false);
+      setShowApproved(false);
+      invalidate();
+    },
   });
   const approve = useMutation({
     mutationFn: (planId: string) => approveFn({ data: { planId } }),
@@ -108,17 +117,50 @@ function PlanPage() {
           {approved.isLoading ? (
             <p className="mt-2 text-sm text-muted-foreground">Loading your plan…</p>
           ) : approved.data ? (
-            <div className="mt-2 space-y-5">
-              <div className="rounded-2xl border border-border bg-card p-4">
-                <p className="text-xs font-semibold uppercase tracking-wide text-primary">
-                  Week of {approved.data.week_start}
-                </p>
-                {approved.data.summary ? (
-                  <p className="mt-1 text-sm text-foreground">{approved.data.summary}</p>
-                ) : null}
+            draft.data && !showApproved ? (
+              <button
+                type="button"
+                onClick={() => setShowApproved(true)}
+                className="mt-2 flex min-h-14 w-full items-center justify-between rounded-2xl border border-border bg-card px-5 py-3 text-left"
+              >
+                <span className="flex flex-col">
+                  <span className="font-semibold text-foreground">
+                    Week of {approved.data.week_start}
+                  </span>
+                  <span className="text-sm text-muted-foreground">
+                    {approved.data.items.length} exercises · tap to view
+                  </span>
+                </span>
+                <span aria-hidden className="text-muted-foreground">
+                  ▾
+                </span>
+              </button>
+            ) : (
+              <div className="mt-2 space-y-5">
+                <div className="rounded-2xl border border-border bg-card p-4">
+                  <div className="flex items-start justify-between gap-3">
+                    <div>
+                      <p className="text-xs font-semibold uppercase tracking-wide text-primary">
+                        Week of {approved.data.week_start}
+                      </p>
+                      {approved.data.summary ? (
+                        <p className="mt-1 text-sm text-foreground">{approved.data.summary}</p>
+                      ) : null}
+                    </div>
+                    {draft.data ? (
+                      <button
+                        type="button"
+                        onClick={() => setShowApproved(false)}
+                        className="shrink-0 text-sm text-muted-foreground underline underline-offset-4"
+                      >
+                        Collapse
+                      </button>
+                    ) : null}
+                  </div>
+                </div>
+                <PlanDays plan={approved.data} />
               </div>
-              <PlanDays plan={approved.data} />
-            </div>
+            )
           ) : (
             <div className="mt-2 rounded-2xl border border-dashed border-border p-8 text-center">
               <p className="font-semibold text-foreground">No plan yet</p>
@@ -129,19 +171,55 @@ function PlanPage() {
           )}
         </div>
 
-        {!draft.data ? (
+        {!draft.data && !choosingScope ? (
           <button
             type="button"
-            onClick={() => recommend.mutate()}
+            onClick={() => setChoosingScope(true)}
             disabled={busy}
             className="min-h-14 w-full rounded-xl bg-primary font-semibold text-primary-foreground transition-all hover:brightness-110 disabled:opacity-60"
           >
-            {recommend.isPending
-              ? "Building your plan…"
-              : approved.data
-                ? "Recommend a new plan"
-                : "Recommend my plan"}
+            {approved.data ? "Recommend a new plan" : "Recommend my plan"}
           </button>
+        ) : null}
+
+        {choosingScope ? (
+          <div className="rounded-2xl border border-border bg-card p-4">
+            <p className="font-semibold text-foreground">What should the new plan cover?</p>
+            <p className="mt-1 text-sm text-muted-foreground">
+              Feeling low on energy today? You can get a lighter session just for today and keep
+              your week as it is.
+            </p>
+            <div className="mt-3 space-y-2">
+              <button
+                type="button"
+                onClick={() => recommend.mutate("day")}
+                disabled={busy}
+                className="min-h-14 w-full rounded-xl bg-primary font-semibold text-primary-foreground transition-all hover:brightness-110 disabled:opacity-60"
+              >
+                {recommend.isPending && recommend.variables === "day"
+                  ? "Building today's session…"
+                  : "Just today"}
+              </button>
+              <button
+                type="button"
+                onClick={() => recommend.mutate("week")}
+                disabled={busy}
+                className="min-h-14 w-full rounded-xl bg-primary font-semibold text-primary-foreground transition-all hover:brightness-110 disabled:opacity-60"
+              >
+                {recommend.isPending && recommend.variables === "week"
+                  ? "Building your week…"
+                  : "The whole week"}
+              </button>
+              <button
+                type="button"
+                onClick={() => setChoosingScope(false)}
+                disabled={busy}
+                className="min-h-12 w-full rounded-xl border border-border font-semibold text-foreground disabled:opacity-60"
+              >
+                Cancel
+              </button>
+            </div>
+          </div>
         ) : null}
 
       </section>
@@ -178,11 +256,14 @@ function PlanPage() {
 
           <button
             type="button"
-            onClick={() => recommend.mutate()}
+            onClick={() => {
+              setChoosingScope(true);
+              window.scrollTo({ top: 0, behavior: "smooth" });
+            }}
             disabled={busy}
             className="min-h-12 w-full rounded-xl border border-border font-semibold text-foreground disabled:opacity-60"
           >
-            {recommend.isPending ? "Building a new suggestion…" : "Suggest a different plan"}
+            Suggest a different plan
           </button>
         </section>
       ) : null}

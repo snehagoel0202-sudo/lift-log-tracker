@@ -7,7 +7,10 @@ import {
   type PlanExercise,
 } from "./plan-rules";
 
-const DateInput = z.object({ today: z.string().regex(/^\d{4}-\d{2}-\d{2}$/) });
+const DateInput = z.object({
+  today: z.string().regex(/^\d{4}-\d{2}-\d{2}$/),
+  scope: z.enum(["day", "week"]).default("week"),
+});
 
 function shiftDays(dateString: string, days: number) {
   const [y, m, d] = dateString.split("-").map(Number);
@@ -75,7 +78,7 @@ export const recommendPlan = createServerFn({ method: "POST" })
       });
     }
 
-    const draft = buildPlan({
+    const fullDraft = buildPlan({
       today: data.today,
       daysPerWeek: profileRes.data?.days_per_week ?? null,
       equipment: profileRes.data?.equipment ?? null,
@@ -83,6 +86,16 @@ export const recommendPlan = createServerFn({ method: "POST" })
       historyByExercise,
       checkin: checkinRes.data ?? null,
     });
+
+    // "day" scope: only the next training day, for when today feels off but the week is fine.
+    const draft =
+      data.scope === "day"
+        ? {
+            ...fullDraft,
+            days: fullDraft.days.slice(0, 1),
+            summary: `Just today's session. ${fullDraft.summary}`,
+          }
+        : fullDraft;
 
     const unit = profileRes.data?.weight_unit ?? "kg";
 
