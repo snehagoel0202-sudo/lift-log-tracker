@@ -256,11 +256,11 @@ function PlanPage() {
 
           <button
             type="button"
-            onClick={() => recommend.mutate()}
+            onClick={() => setChoosingScope(true)}
             disabled={busy}
             className="min-h-12 w-full rounded-xl border border-border font-semibold text-foreground disabled:opacity-60"
           >
-            {recommend.isPending ? "Building a new suggestion…" : "Suggest a different plan"}
+            Suggest a different plan
           </button>
         </section>
       ) : null}
