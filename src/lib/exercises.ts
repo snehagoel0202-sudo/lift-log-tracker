@@ -2,6 +2,7 @@ import { supabase } from "@/integrations/supabase/client";
 
 export type ExerciseEquipment = "barbell" | "dumbbell" | "machine" | "cable" | "bodyweight";
 export type ImpactLevel = "low" | "moderate" | "high";
+export type MovementPattern = "squat" | "hinge" | "push" | "pull" | "lunge" | "carry" | "core";
 
 export type Exercise = {
   id: string;
@@ -13,6 +14,18 @@ export type Exercise = {
   weight_step: number;
   impact_level: ImpactLevel;
   postpartum_safe: boolean;
+  movement_pattern: MovementPattern;
+  variation_of: string | null;
+};
+
+export const MOVEMENT_PATTERN_LABELS: Record<MovementPattern, string> = {
+  squat: "Squat",
+  hinge: "Hinge",
+  push: "Push",
+  pull: "Pull",
+  lunge: "Lunge",
+  carry: "Carry",
+  core: "Core",
 };
 
 export const EQUIPMENT_LABELS: Record<ExerciseEquipment, string> = {
@@ -27,7 +40,7 @@ export async function fetchExercises(): Promise<Exercise[]> {
   const { data, error } = await supabase
     .from("exercises")
     .select(
-      "id, name, aliases, muscle_group, equipment, is_compound, weight_step, impact_level, postpartum_safe",
+      "id, name, aliases, muscle_group, equipment, is_compound, weight_step, impact_level, postpartum_safe, movement_pattern, variation_of",
     )
     .order("muscle_group")
     .order("name");

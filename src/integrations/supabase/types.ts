@@ -67,9 +67,11 @@ export type Database = {
           id: string
           impact_level: Database["public"]["Enums"]["impact_level"]
           is_compound: boolean
+          movement_pattern: Database["public"]["Enums"]["movement_pattern"]
           muscle_group: string
           name: string
           postpartum_safe: boolean
+          variation_of: string | null
           video_channel: string | null
           video_channel_url: string | null
           video_id: string | null
@@ -83,9 +85,11 @@ export type Database = {
           id?: string
           impact_level?: Database["public"]["Enums"]["impact_level"]
           is_compound?: boolean
+          movement_pattern: Database["public"]["Enums"]["movement_pattern"]
           muscle_group: string
           name: string
           postpartum_safe?: boolean
+          variation_of?: string | null
           video_channel?: string | null
           video_channel_url?: string | null
           video_id?: string | null
@@ -99,16 +103,26 @@ export type Database = {
           id?: string
           impact_level?: Database["public"]["Enums"]["impact_level"]
           is_compound?: boolean
+          movement_pattern?: Database["public"]["Enums"]["movement_pattern"]
           muscle_group?: string
           name?: string
           postpartum_safe?: boolean
+          variation_of?: string | null
           video_channel?: string | null
           video_channel_url?: string | null
           video_id?: string | null
           video_title?: string | null
           weight_step?: number
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "exercises_variation_of_fkey"
+            columns: ["variation_of"]
+            isOneToOne: false
+            referencedRelation: "exercises"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       plan_items: {
         Row: {
@@ -358,6 +372,14 @@ export type Database = {
         | "bodyweight"
       experience_level: "beginner" | "intermediate" | "advanced"
       impact_level: "low" | "moderate" | "high"
+      movement_pattern:
+        | "squat"
+        | "hinge"
+        | "push"
+        | "pull"
+        | "lunge"
+        | "carry"
+        | "core"
       plan_status: "draft" | "approved" | "archived"
       training_goal:
         | "strength"
@@ -503,6 +525,15 @@ export const Constants = {
       ],
       experience_level: ["beginner", "intermediate", "advanced"],
       impact_level: ["low", "moderate", "high"],
+      movement_pattern: [
+        "squat",
+        "hinge",
+        "push",
+        "pull",
+        "lunge",
+        "carry",
+        "core",
+      ],
       plan_status: ["draft", "approved", "archived"],
       training_goal: [
         "strength",
