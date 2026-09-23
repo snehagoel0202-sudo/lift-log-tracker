@@ -29,7 +29,7 @@ async function fetchPlanByStatus(status: PlanStatus): Promise<Plan | null> {
   const { data, error } = await supabase
     .from("plans")
     .select(
-      "id, week_start, status, summary, plan_items(id, day_number, position, sets, rep_min, rep_max, target_weight, unit, rationale, exercises(name, muscle_group))",
+      "id, week_start, status, summary, plan_items(id, day_number, position, exercise_id, sets, rep_min, rep_max, target_weight, unit, rationale, exercises(name, muscle_group))",
     )
     .eq("user_id", userData.user.id)
     .eq("status", status)
@@ -71,7 +71,7 @@ export const archivedPlansQueryOptions = {
     const { data, error } = await supabase
       .from("plans")
       .select(
-        "id, week_start, status, summary, plan_items(id, day_number, position, sets, rep_min, rep_max, target_weight, unit, rationale, exercises(name, muscle_group))",
+        "id, week_start, status, summary, plan_items(id, day_number, position, exercise_id, sets, rep_min, rep_max, target_weight, unit, rationale, exercises(name, muscle_group))",
       )
       .eq("user_id", userData.user.id)
       .eq("status", "archived")
@@ -101,7 +101,7 @@ export async function fetchPlanById(planId: string): Promise<Plan | null> {
   const { data, error } = await supabase
     .from("plans")
     .select(
-      "id, week_start, status, summary, plan_items(id, day_number, position, sets, rep_min, rep_max, target_weight, unit, rationale, exercises(name, muscle_group))",
+      "id, week_start, status, summary, plan_items(id, day_number, position, exercise_id, sets, rep_min, rep_max, target_weight, unit, rationale, exercises(name, muscle_group))",
     )
     .eq("user_id", userData.user.id)
     .eq("id", planId)
