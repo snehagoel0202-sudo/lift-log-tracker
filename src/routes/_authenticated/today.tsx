@@ -43,7 +43,7 @@ function rowsForItem(item: PlanItem): SetRow[] {
 }
 
 const inputClass =
-  "h-11 w-full rounded-xl border border-border bg-background px-3 text-center text-base text-foreground";
+  "h-12 w-full min-w-0 rounded-xl border border-border bg-background px-1.5 text-center text-base text-foreground";
 
 function Today() {
   const today = localDateString();
@@ -261,21 +261,21 @@ function Today() {
             </div>
 
             <div className="mt-3 space-y-2">
-              <div className="flex items-center gap-2 text-xs text-muted-foreground">
-                <span className="w-9" />
-                <span className="flex-1 text-center">Weight ({item.unit})</span>
+              <div className="flex items-center gap-1.5 text-[11px] text-muted-foreground">
+                <span className="w-11 shrink-0" />
+                <span className="flex-1 text-center">{item.unit}</span>
                 <span className="flex-1 text-center">Reps</span>
                 <span className="flex-1 text-center">RPE</span>
-                <span className="w-8" />
+                <span className="w-11 shrink-0" />
               </div>
               {(rows[item.id] ?? []).map((row, index) => (
-                <div key={index} className="flex items-center gap-2">
+                <div key={index} className="flex items-center gap-1.5">
                   <input
                     type="checkbox"
                     aria-label={`Set ${index + 1} done`}
                     checked={row.done}
                     onChange={(event) => update(item.id, index, { done: event.target.checked })}
-                    className="h-9 w-9 shrink-0 rounded-lg accent-primary"
+                    className="h-11 w-11 shrink-0 rounded-lg accent-primary"
                   />
                   <input
                     inputMode="decimal"
@@ -308,7 +308,7 @@ function Today() {
                         [item.id]: (current[item.id] ?? []).filter((_, i) => i !== index),
                       }))
                     }
-                    className="h-9 w-8 shrink-0 rounded-lg border border-border text-muted-foreground"
+                    className="h-11 w-11 shrink-0 rounded-lg border border-border text-lg text-muted-foreground"
                   >
                     ×
                   </button>
