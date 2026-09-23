@@ -2,6 +2,7 @@ import { useMemo, useState } from "react";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
 import { AppScreen } from "@/components/AppScreen";
+import { EmptyState, ErrorState, LoadingBlock } from "@/components/ScreenState";
 import { EQUIPMENT_LABELS, exercisesQueryOptions, matchesSearch } from "@/lib/exercises";
 
 export const Route = createFileRoute("/_authenticated/library")({
@@ -24,7 +25,7 @@ export const Route = createFileRoute("/_authenticated/library")({
 
 function LibraryPage() {
   const [query, setQuery] = useState("");
-  const { data, isLoading, error } = useQuery(exercisesQueryOptions);
+  const { data, isLoading, error, refetch, isFetching } = useQuery(exercisesQueryOptions);
 
   const results = useMemo(
     () => (data ?? []).filter((exercise) => matchesSearch(exercise, query)),
@@ -35,7 +36,7 @@ function LibraryPage() {
     <AppScreen title="Library" subtitle="Every exercise LiftLog can plan and track.">
       <Link
         to="/plan"
-        className="mb-4 inline-flex text-sm font-semibold text-muted-foreground hover:text-foreground"
+        className="-ml-2 mb-3 inline-flex min-h-11 items-center px-2 text-sm font-semibold text-muted-foreground hover:text-foreground"
       >
         ← Back to Plan
       </Link>
@@ -50,11 +51,18 @@ function LibraryPage() {
       />
 
       {isLoading ? (
-        <p className="text-sm text-muted-foreground">Loading exercises…</p>
+        <LoadingBlock lines={5} label="Loading exercises" />
       ) : error ? (
-        <p className="text-sm text-destructive">Couldn’t load the exercise library.</p>
+        <ErrorState
+          message="We couldn't load the exercise library."
+          onRetry={() => refetch()}
+          retrying={isFetching}
+        />
       ) : results.length === 0 ? (
-        <p className="text-sm text-muted-foreground">No exercises match “{query}”.</p>
+        <EmptyState
+          title={query.trim() ? `No exercises match “${query.trim()}”` : "No exercises yet"}
+          hint={query.trim() ? "Try a shorter word, like “press” or “row”." : undefined}
+        />
       ) : (
         <ul className="space-y-3">
           {results.map((exercise) => (
