@@ -62,6 +62,7 @@ export function useSpeechRecognition(onFinalChunk: (text: string) => void) {
       let interimText = "";
       for (let i = event.resultIndex; i < event.results.length; i += 1) {
         const result = event.results[i];
+        if (!result) continue;
         if (result.isFinal) finalText += `${result[0].transcript} `;
         else interimText += result[0].transcript;
       }
