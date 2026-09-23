@@ -111,26 +111,34 @@ export async function narratePlan(draft: PlanDraft): Promise<Narration | null> {
   const decoder = new TextDecoder();
   let buffer = "";
   let text = "";
-  while (true) {
-    const { value, done } = await reader.read();
-    if (done) break;
-    buffer += decoder.decode(value, { stream: true });
-    const lines = buffer.split("\n");
-    buffer = lines.pop() ?? "";
-    for (const line of lines) {
-      if (!line.startsWith("data:")) continue;
-      const data = line.slice(5).trim();
-      if (!data || data === "[DONE]") continue;
-      try {
-        const event = JSON.parse(data) as { type?: string; delta?: string };
-        if (event.type === "response.output_text.delta" && typeof event.delta === "string") {
-          text += event.delta;
+  try {
+    while (true) {
+      const { value, done } = await reader.read();
+      if (done) break;
+      buffer += decoder.decode(value, { stream: true });
+      const lines = buffer.split("\n");
+      buffer = lines.pop() ?? "";
+      for (const line of lines) {
+        if (!line.startsWith("data:")) continue;
+        const data = line.slice(5).trim();
+        if (!data || data === "[DONE]") continue;
+        try {
+          const event = JSON.parse(data) as { type?: string; delta?: string };
+          if (event.type === "response.output_text.delta" && typeof event.delta === "string") {
+            text += event.delta;
+          }
+        } catch {
+          // ignore keep-alives / partial frames
         }
-      } catch {
-        // ignore keep-alives / partial frames
       }
     }
+  } catch (error) {
+    console.error("[plan] AI narration stream aborted", error);
+    return null;
+  } finally {
+    clearTimeout(timer);
   }
+
 
   try {
     const parsed = JSON.parse(text) as {
