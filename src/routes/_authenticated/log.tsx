@@ -6,7 +6,14 @@ import { AppScreen } from "@/components/AppScreen";
 import { useSpeechRecognition } from "@/hooks/use-speech-recognition";
 import { localDateString } from "@/lib/checkins";
 import { exercisesQueryOptions } from "@/lib/exercises";
-import { reviewWorkoutText, saveLoggedWorkout, type ReviewResult } from "@/lib/log.functions";
+import {
+  correctWorkoutRows,
+  reviewWorkoutText,
+  saveLoggedWorkout,
+  type ReviewResult,
+  type ReviewRow,
+} from "@/lib/log.functions";
+
 
 export const Route = createFileRoute("/_authenticated/log")({
   head: () => ({
