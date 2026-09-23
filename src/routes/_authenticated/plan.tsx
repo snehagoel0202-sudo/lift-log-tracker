@@ -60,8 +60,8 @@ function PlanDays({ plan }: { plan: Plan }) {
 
 function PlanPage() {
   const queryClient = useQueryClient();
-  const draft = useQuery(draftPlanQueryOptions);
   const approved = useQuery(approvedPlanQueryOptions);
+  const draft = useQuery(draftPlanQueryOptions);
 
   const recommendFn = useServerFn(recommendPlan);
   const approveFn = useServerFn(approvePlan);
@@ -100,10 +100,53 @@ function PlanPage() {
         </span>
       </Link>
 
+      <section className="space-y-5">
+        <div>
+          <p className="text-xs font-semibold uppercase tracking-wide text-primary">
+            Your current plan
+          </p>
+          {approved.isLoading ? (
+            <p className="mt-2 text-sm text-muted-foreground">Loading your plan…</p>
+          ) : approved.data ? (
+            <div className="mt-2 space-y-5">
+              <div className="rounded-2xl border border-border bg-card p-4">
+                <p className="text-xs font-semibold uppercase tracking-wide text-primary">
+                  Week of {approved.data.week_start}
+                </p>
+                {approved.data.summary ? (
+                  <p className="mt-1 text-sm text-foreground">{approved.data.summary}</p>
+                ) : null}
+              </div>
+              <PlanDays plan={approved.data} />
+            </div>
+          ) : (
+            <div className="mt-2 rounded-2xl border border-dashed border-border p-8 text-center">
+              <p className="font-semibold text-foreground">No plan yet</p>
+              <p className="mt-1 text-sm text-muted-foreground">
+                Get a week of workouts suggested from your history.
+              </p>
+            </div>
+          )}
+        </div>
+
+        {!approved.data && !draft.data ? (
+          <button
+            type="button"
+            onClick={() => recommend.mutate()}
+            disabled={busy}
+            className="min-h-14 w-full rounded-xl bg-primary font-semibold text-primary-foreground transition-all hover:brightness-110 disabled:opacity-60"
+          >
+            {recommend.isPending ? "Building your plan…" : "Recommend my plan"}
+          </button>
+        ) : null}
+      </section>
+
       {draft.data ? (
-        <section className="space-y-5">
+        <section className="mt-10 space-y-5">
           <div className="rounded-2xl border border-primary/50 bg-primary/5 p-4">
-            <p className="text-xs font-semibold uppercase tracking-wide text-primary">Draft plan</p>
+            <p className="text-xs font-semibold uppercase tracking-wide text-primary">
+              Suggested plan (not saved yet)
+            </p>
             <p className="mt-1 text-sm text-foreground">{draft.data.summary}</p>
           </div>
 
@@ -127,44 +170,27 @@ function PlanPage() {
               {approve.isPending ? "Approving…" : "Approve plan"}
             </button>
           </div>
-        </section>
-      ) : (
-        <section className="space-y-5">
-          {approved.data ? (
-            <div className="space-y-5">
-              <div className="rounded-2xl border border-border bg-card p-4">
-                <p className="text-xs font-semibold uppercase tracking-wide text-primary">
-                  Your plan · week of {approved.data.week_start}
-                </p>
-                <p className="mt-1 text-sm text-foreground">{approved.data.summary}</p>
-              </div>
-              <PlanDays plan={approved.data} />
-            </div>
-          ) : draft.isLoading || approved.isLoading ? (
-            <p className="text-sm text-muted-foreground">Loading your plan…</p>
-          ) : (
-            <div className="rounded-2xl border border-dashed border-border p-8 text-center">
-              <p className="font-semibold text-foreground">No plan yet</p>
-              <p className="mt-1 text-sm text-muted-foreground">
-                Get a week of workouts suggested from your history.
-              </p>
-            </div>
-          )}
 
           <button
             type="button"
             onClick={() => recommend.mutate()}
             disabled={busy}
-            className="min-h-14 w-full rounded-xl bg-primary font-semibold text-primary-foreground transition-all hover:brightness-110 disabled:opacity-60"
+            className="min-h-12 w-full rounded-xl border border-border font-semibold text-foreground disabled:opacity-60"
           >
-            {recommend.isPending ? "Building your plan…" : "Recommend my plan"}
+            {recommend.isPending ? "Building a new suggestion…" : "Suggest a different plan"}
           </button>
         </section>
-      )}
+      ) : null}
 
       {failed ? (
         <p className="mt-4 text-sm text-destructive">Something went wrong. Try again.</p>
       ) : null}
+
+      <div className="mt-10 text-center">
+        <Link to="/plan-history" className="text-sm text-muted-foreground underline underline-offset-4">
+          Past plans
+        </Link>
+      </div>
     </AppScreen>
   );
 }

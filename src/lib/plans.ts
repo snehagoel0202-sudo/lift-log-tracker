@@ -63,6 +63,66 @@ export const approvedPlanQueryOptions = {
   queryFn: () => fetchPlanByStatus("approved"),
 };
 
+export const archivedPlansQueryOptions = {
+  queryKey: ["plan", "archived"] as const,
+  queryFn: async (): Promise<Plan[]> => {
+    const { data: userData } = await supabase.auth.getUser();
+    if (!userData.user) return [];
+    const { data, error } = await supabase
+      .from("plans")
+      .select(
+        "id, week_start, status, summary, plan_items(id, day_number, position, sets, rep_min, rep_max, target_weight, unit, rationale, exercises(name, muscle_group))",
+      )
+      .eq("user_id", userData.user.id)
+      .eq("status", "archived")
+      .order("week_start", { ascending: false });
+    if (error) throw error;
+    return (data ?? []).map((row) => {
+      const items = ((row as unknown as { plan_items: PlanItem[] }).plan_items ?? [])
+        .map((item) => ({
+          ...item,
+          target_weight: item.target_weight == null ? null : Number(item.target_weight),
+        }))
+        .sort((a, b) => a.day_number - b.day_number || a.position - b.position);
+      return {
+        id: row.id,
+        week_start: row.week_start,
+        status: row.status as PlanStatus,
+        summary: row.summary,
+        items,
+      };
+    });
+  },
+};
+
+export async function fetchPlanById(planId: string): Promise<Plan | null> {
+  const { data: userData } = await supabase.auth.getUser();
+  if (!userData.user) return null;
+  const { data, error } = await supabase
+    .from("plans")
+    .select(
+      "id, week_start, status, summary, plan_items(id, day_number, position, sets, rep_min, rep_max, target_weight, unit, rationale, exercises(name, muscle_group))",
+    )
+    .eq("user_id", userData.user.id)
+    .eq("id", planId)
+    .maybeSingle();
+  if (error) throw error;
+  if (!data) return null;
+  const items = ((data as unknown as { plan_items: PlanItem[] }).plan_items ?? [])
+    .map((item) => ({
+      ...item,
+      target_weight: item.target_weight == null ? null : Number(item.target_weight),
+    }))
+    .sort((a, b) => a.day_number - b.day_number || a.position - b.position);
+  return {
+    id: data.id,
+    week_start: data.week_start,
+    status: data.status as PlanStatus,
+    summary: data.summary,
+    items,
+  };
+}
+
 export function groupByDay(items: PlanItem[]) {
   const days = new Map<number, PlanItem[]>();
   for (const item of items) {
