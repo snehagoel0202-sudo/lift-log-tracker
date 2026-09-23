@@ -36,15 +36,20 @@ const SCHEMA = {
 
 const INSTRUCTIONS = [
   "You convert a person's free-text or dictated description of a finished workout into JSON only.",
+  "The message is conversational and may start with chatter like 'hi I want to record my workout' or 'today I did'. Ignore everything that is not an exercise, a count, a weight or an RPE.",
   "Output one object per individual set. '3 sets of 8' means three objects with set_number 1, 2, 3.",
+  "A count stated once for a group applies to every exercise in that group: 'squats, lunges and bicep curls, 3 sets of each' means 3 sets for squats, 3 for lunges and 3 for bicep curls.",
+  "Exercises may be listed with 'and', commas, or 'along with'. Treat each listed exercise separately, keeping the order mentioned.",
+  "Dictation mishears words. Copy the exercise words exactly as written, even if they look wrong ('dumbbell just press', 'bicep curves'); matching happens later. Never replace an exercise with a different one and never add exercises that were not mentioned.",
   "The text comes from phone dictation, which often merges a spoken list of rep counts into one number with a thousands separator or no space. '1,010 and 8' means the sets 10, 10 and 8. '1,088' means 10, 8, 8. '810' means 8 and 10.",
   "Reps per set are realistically 1 to 50. If a rep number is above 50, it is a merged list: split it into the separate rep counts, one set each, never output it as a single set.",
   "A weight may legitimately be large (e.g. 100 kg), so only apply the splitting rule to rep counts.",
-  "NEVER invent or guess a value. If the person did not say a weight, reps, RPE or unit, use null for it.",
+  "NEVER invent or guess a value. If the person did not say a weight, reps, RPE or unit, use null for it. A message with no weights at all is normal: output the sets with weight null.",
   "Keep the unit exactly as said ('kg' or 'lb'). Never convert between units. If no unit was said, unit is null.",
   "exercise_name is the exercise words the person used, nothing added.",
   "Do not give advice, do not diagnose anything, output JSON only.",
 ].join(" ");
+
 
 /** Parse dictated/typed workout text into one object per set. AI writes no data itself. */
 export async function parseWorkoutText(text: string): Promise<ParsedSet[]> {
