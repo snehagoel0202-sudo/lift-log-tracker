@@ -50,9 +50,20 @@ const INSTRUCTIONS = [
   "Do not give advice, do not diagnose anything, output JSON only.",
 ].join(" ");
 
+const CORRECTION_INSTRUCTIONS = [
+  "You are updating an already-reviewed list of workout sets using a short correction from the person.",
+  "You get the current list of sets as JSON and a correction in plain words (e.g. 'set 3 was 6 reps', 'squats were 70 kg', 'drop the last set', 'add one more set of lunges').",
+  "The correction overrides ONLY what it explicitly mentions. Every other value in every other set must be returned exactly as given, unchanged.",
+  "Return the complete updated list of sets, one object per set, in the same order, keeping set_number sequential per exercise.",
+  "Never invent or guess values. Fields that are null stay null unless the correction states them. Keep units exactly as given and never convert between kg and lb.",
+  "Keep exercise_name strings exactly as given unless the correction renames an exercise.",
+  "If the correction removes sets, omit them. If it adds sets, add them with only the values stated and null elsewhere.",
+  "Do not give advice, output JSON only.",
+].join(" ");
 
-/** Parse dictated/typed workout text into one object per set. AI writes no data itself. */
-export async function parseWorkoutText(text: string): Promise<ParsedSet[]> {
+type AiInput = { role: "developer" | "user"; content: { type: "input_text"; text: string }[] };
+
+async function callParser(input: AiInput[]): Promise<ParsedSet[]> {
   const key = process.env["LOVABLE_API_KEY"];
   if (!key) throw new ParseUnavailableError("Missing LOVABLE_API_KEY");
 
@@ -73,10 +84,7 @@ export async function parseWorkoutText(text: string): Promise<ParsedSet[]> {
         stream: true,
         store: false,
         reasoning: { effort: "low", summary: "auto" },
-        input: [
-          { role: "developer", content: [{ type: "input_text", text: INSTRUCTIONS }] },
-          { role: "user", content: [{ type: "input_text", text }] },
-        ],
+        input,
         text: {
           format: { type: "json_schema", name: "workout_log", strict: true, schema: SCHEMA },
         },
@@ -88,6 +96,7 @@ export async function parseWorkoutText(text: string): Promise<ParsedSet[]> {
     console.error("[log] AI parse request failed", error);
     throw new ParseUnavailableError("AI request failed");
   }
+
 
   if (!response.ok || !response.body) {
     clearTimeout(timer);
