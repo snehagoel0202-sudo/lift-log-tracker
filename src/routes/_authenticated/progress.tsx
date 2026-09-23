@@ -11,6 +11,7 @@ import {
   YAxis,
 } from "recharts";
 import { AppScreen } from "@/components/AppScreen";
+import { EmptyState, ErrorState, LoadingBlock } from "@/components/ScreenState";
 import { exercisesQueryOptions } from "@/lib/exercises";
 import {
   bestSetsByUnit,
@@ -96,10 +97,13 @@ function ProgressPage() {
 
       <section className="mb-6">
         <p className="display-title mb-3 text-xl text-foreground">EXERCISE PROGRESS</p>
-        {loggedExerciseIds.length === 0 ? (
-          <p className="rounded-2xl border border-dashed border-border p-6 text-center text-sm text-muted-foreground">
-            Log a workout and your lift trends show up here.
-          </p>
+        {historyQuery.isLoading ? (
+          <LoadingBlock lines={2} label="Loading your lifts" />
+        ) : loggedExerciseIds.length === 0 ? (
+          <EmptyState
+            title="No lifts to chart yet"
+            hint="Log a workout and your lift trends show up here."
+          />
         ) : (
           <div className="space-y-4">
             <select
@@ -185,11 +189,18 @@ function ProgressPage() {
       <section>
         <p className="display-title mb-3 text-xl text-foreground">HISTORY</p>
         {historyQuery.isLoading ? (
-          <p className="text-sm text-muted-foreground">Loading your workouts…</p>
+          <LoadingBlock lines={3} label="Loading your workouts" />
+        ) : historyQuery.isError ? (
+          <ErrorState
+            message="We couldn't load your workouts."
+            onRetry={() => historyQuery.refetch()}
+            retrying={historyQuery.isFetching}
+          />
         ) : sessions.length === 0 ? (
-          <p className="rounded-2xl border border-dashed border-border p-6 text-center text-sm text-muted-foreground">
-            No workouts logged yet.
-          </p>
+          <EmptyState
+            title="No workouts logged yet"
+            hint="Finish a session on Today, or type one in on Log, and it shows up here."
+          />
         ) : (
           <div className="space-y-3">
             {sessions.map((session) => (
