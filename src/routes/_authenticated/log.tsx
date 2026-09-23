@@ -6,7 +6,14 @@ import { AppScreen } from "@/components/AppScreen";
 import { useSpeechRecognition } from "@/hooks/use-speech-recognition";
 import { localDateString } from "@/lib/checkins";
 import { exercisesQueryOptions } from "@/lib/exercises";
-import { reviewWorkoutText, saveLoggedWorkout, type ReviewResult } from "@/lib/log.functions";
+import {
+  correctWorkoutRows,
+  reviewWorkoutText,
+  saveLoggedWorkout,
+  type ReviewResult,
+  type ReviewRow,
+} from "@/lib/log.functions";
+
 
 export const Route = createFileRoute("/_authenticated/log")({
   head: () => ({
@@ -50,11 +57,36 @@ function LogPage() {
   const [rows, setRows] = useState<Row[] | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [savedCount, setSavedCount] = useState<number | null>(null);
+  const [correction, setCorrection] = useState("");
 
   const appendTranscript = useCallback((chunk: string) => {
     setText((current) => (current.trim() ? `${current.replace(/\s+$/, "")} ${chunk}` : chunk));
   }, []);
   const speech = useSpeechRecognition(appendTranscript);
+
+  const appendCorrection = useCallback((chunk: string) => {
+    setCorrection((current) => (current.trim() ? `${current.replace(/\s+$/, "")} ${chunk}` : chunk));
+  }, []);
+  const fixSpeech = useSpeechRecognition(appendCorrection);
+
+  const toRows = useCallback(
+    (result: Extract<ReviewResult, { ok: true }>) =>
+      result.rows.map((row) => ({
+        exercise_name: row.exercise_name,
+        exercise_id: row.exercise_id,
+        set_number: row.set_number,
+        weight: row.weight == null ? "" : String(row.weight),
+        unit: row.unit ?? result.defaultUnit,
+        reps: row.reps == null ? "" : String(row.reps),
+        rpe: row.rpe == null ? "" : String(row.rpe),
+      })),
+    [],
+  );
+
+  const readError = (reason: "unreadable" | "unavailable") =>
+    reason === "unreadable"
+      ? "I couldn't read that as a workout. Try rephrasing, e.g. \"Squats 60 kg 3 sets of 8, RPE 8\"."
+      : "The review service isn't responding right now. Please try again in a moment.";
 
   const review = useMutation({
     mutationFn: useServerFn(reviewWorkoutText),
@@ -64,26 +96,30 @@ function LogPage() {
     },
     onSuccess: (result: ReviewResult) => {
       if (!result.ok) {
+        setError(readError(result.reason));
+        return;
+      }
+      setRows(toRows(result));
+    },
+    onError: () => setError("Something went wrong reading that. Please try again."),
+  });
+
+  const correct = useMutation({
+    mutationFn: useServerFn(correctWorkoutRows),
+    onMutate: () => setError(null),
+    onSuccess: (result: ReviewResult) => {
+      if (!result.ok) {
         setError(
           result.reason === "unreadable"
-            ? "I couldn't read that as a workout. Try rephrasing, e.g. \"Squats 60 kg 3 sets of 8, RPE 8\"."
+            ? "I couldn't work out that change. Try something like \"set 3 was 6 reps\"."
             : "The review service isn't responding right now. Please try again in a moment.",
         );
         return;
       }
-      setRows(
-        result.rows.map((row) => ({
-          exercise_name: row.exercise_name,
-          exercise_id: row.exercise_id,
-          set_number: row.set_number,
-          weight: row.weight == null ? "" : String(row.weight),
-          unit: row.unit ?? result.defaultUnit,
-          reps: row.reps == null ? "" : String(row.reps),
-          rpe: row.rpe == null ? "" : String(row.rpe),
-        })),
-      );
+      setRows(toRows(result));
+      setCorrection("");
     },
-    onError: () => setError("Something went wrong reading that. Please try again."),
+    onError: () => setError("Something went wrong applying that change. Please try again."),
   });
 
   const save = useMutation({
@@ -92,10 +128,41 @@ function LogPage() {
       setSavedCount(result.saved);
       setRows(null);
       setText("");
+      setCorrection("");
       await queryClient.invalidateQueries({ queryKey: ["plan-sessions"] });
     },
     onError: () => setError("Couldn't save those sets. Please try again."),
   });
+
+  /** Corrections build on the rows currently on screen, including hand edits. */
+  function submitCorrection() {
+    if (!rows || !correction.trim()) return;
+    if (fixSpeech.listening) fixSpeech.stop();
+    const sets: ReviewRow[] = rows.map((row) => ({
+      exercise_name: row.exercise_name,
+      exercise_id: row.exercise_id,
+      set_number: row.set_number,
+      weight: row.weight.trim() === "" ? null : Number(row.weight),
+      unit: row.unit,
+      reps: row.reps.trim() === "" ? null : Math.trunc(Number(row.reps)),
+      rpe: row.rpe.trim() === "" ? null : Number(row.rpe),
+    }));
+    correct.mutate({
+      data: {
+        correction: correction.trim(),
+        originalText: text.trim() || null,
+        sets: sets.map(({ exercise_name, set_number, weight, unit, reps, rpe }) => ({
+          exercise_name,
+          set_number,
+          weight,
+          unit,
+          reps,
+          rpe,
+        })),
+      },
+    });
+  }
+
 
   function update(index: number, patch: Partial<Row>) {
     setRows((current) =>
@@ -284,12 +351,87 @@ function LogPage() {
             </div>
           ))}
 
+          <div className="space-y-3 rounded-2xl border border-border p-4">
+            <div>
+              <p className="text-sm font-semibold text-foreground">Change something</p>
+              <p className="mt-1 text-sm text-muted-foreground">
+                Say what's wrong, e.g. “set 3 was 6 reps”. Only what you mention changes.
+              </p>
+            </div>
+            {fixSpeech.supported ? (
+              fixSpeech.listening ? (
+                <div className="rounded-xl border border-primary/50 bg-primary/10 p-3">
+                  <div className="flex items-center gap-3">
+                    <span className="relative flex h-3 w-3 shrink-0">
+                      <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-primary opacity-75" />
+                      <span className="relative inline-flex h-3 w-3 rounded-full bg-primary" />
+                    </span>
+                    <span className="flex-1 text-sm font-semibold text-foreground">Listening…</span>
+                    <button
+                      type="button"
+                      onClick={fixSpeech.stop}
+                      className="h-11 rounded-xl border border-primary bg-primary px-5 text-sm font-semibold text-primary-foreground"
+                    >
+                      Stop
+                    </button>
+                  </div>
+                  {fixSpeech.interim ? (
+                    <p className="mt-2 text-sm text-muted-foreground">{fixSpeech.interim}…</p>
+                  ) : null}
+                </div>
+              ) : (
+                <button
+                  type="button"
+                  onClick={() => void fixSpeech.start()}
+                  className="flex h-12 w-full items-center justify-center gap-2 rounded-xl border border-primary/60 bg-primary/10 font-semibold text-foreground"
+                >
+                  <svg
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="2"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    className="h-5 w-5 text-primary"
+                    aria-hidden="true"
+                  >
+                    <path d="M12 2a3 3 0 0 0-3 3v7a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3Z" />
+                    <path d="M19 10v2a7 7 0 0 1-14 0v-2" />
+                    <path d="M12 19v3" />
+                  </svg>
+                  Tap to speak
+                </button>
+              )
+            ) : null}
+            {fixSpeech.error ? <p className="text-sm text-destructive">{fixSpeech.error}</p> : null}
+            <textarea
+              value={
+                fixSpeech.listening && fixSpeech.interim
+                  ? `${correction} ${fixSpeech.interim}`.trimStart()
+                  : correction
+              }
+              onChange={(event) => setCorrection(event.target.value)}
+              placeholder="set 3 was 6 reps"
+              rows={2}
+              className="w-full rounded-xl border border-border bg-background p-3 text-base text-foreground placeholder:text-muted-foreground"
+            />
+            <button
+              type="button"
+              disabled={!correction.trim() || correct.isPending}
+              onClick={submitCorrection}
+              className="h-12 w-full rounded-xl border border-primary/60 bg-primary/10 font-semibold text-foreground disabled:opacity-50"
+            >
+              {correct.isPending ? "Updating…" : "Apply change"}
+            </button>
+          </div>
+
           {unmatched > 0 ? (
             <p className="text-sm text-muted-foreground">
               Pick an exercise for {unmatched} {unmatched === 1 ? "set" : "sets"} before saving.
             </p>
           ) : null}
           {error ? <p className="text-sm text-destructive">{error}</p> : null}
+
 
           <div className="flex gap-3">
             <button
@@ -304,7 +446,9 @@ function LogPage() {
               type="button"
               onClick={() => {
                 setRows(null);
+                setCorrection("");
                 setError(null);
+
               }}
               className="h-12 flex-1 rounded-xl border border-border font-semibold text-foreground"
             >
