@@ -57,11 +57,36 @@ function LogPage() {
   const [rows, setRows] = useState<Row[] | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [savedCount, setSavedCount] = useState<number | null>(null);
+  const [correction, setCorrection] = useState("");
 
   const appendTranscript = useCallback((chunk: string) => {
     setText((current) => (current.trim() ? `${current.replace(/\s+$/, "")} ${chunk}` : chunk));
   }, []);
   const speech = useSpeechRecognition(appendTranscript);
+
+  const appendCorrection = useCallback((chunk: string) => {
+    setCorrection((current) => (current.trim() ? `${current.replace(/\s+$/, "")} ${chunk}` : chunk));
+  }, []);
+  const fixSpeech = useSpeechRecognition(appendCorrection);
+
+  const toRows = useCallback(
+    (result: Extract<ReviewResult, { ok: true }>) =>
+      result.rows.map((row) => ({
+        exercise_name: row.exercise_name,
+        exercise_id: row.exercise_id,
+        set_number: row.set_number,
+        weight: row.weight == null ? "" : String(row.weight),
+        unit: row.unit ?? result.defaultUnit,
+        reps: row.reps == null ? "" : String(row.reps),
+        rpe: row.rpe == null ? "" : String(row.rpe),
+      })),
+    [],
+  );
+
+  const readError = (reason: "unreadable" | "unavailable") =>
+    reason === "unreadable"
+      ? "I couldn't read that as a workout. Try rephrasing, e.g. \"Squats 60 kg 3 sets of 8, RPE 8\"."
+      : "The review service isn't responding right now. Please try again in a moment.";
 
   const review = useMutation({
     mutationFn: useServerFn(reviewWorkoutText),
@@ -71,26 +96,30 @@ function LogPage() {
     },
     onSuccess: (result: ReviewResult) => {
       if (!result.ok) {
+        setError(readError(result.reason));
+        return;
+      }
+      setRows(toRows(result));
+    },
+    onError: () => setError("Something went wrong reading that. Please try again."),
+  });
+
+  const correct = useMutation({
+    mutationFn: useServerFn(correctWorkoutRows),
+    onMutate: () => setError(null),
+    onSuccess: (result: ReviewResult) => {
+      if (!result.ok) {
         setError(
           result.reason === "unreadable"
-            ? "I couldn't read that as a workout. Try rephrasing, e.g. \"Squats 60 kg 3 sets of 8, RPE 8\"."
+            ? "I couldn't work out that change. Try something like \"set 3 was 6 reps\"."
             : "The review service isn't responding right now. Please try again in a moment.",
         );
         return;
       }
-      setRows(
-        result.rows.map((row) => ({
-          exercise_name: row.exercise_name,
-          exercise_id: row.exercise_id,
-          set_number: row.set_number,
-          weight: row.weight == null ? "" : String(row.weight),
-          unit: row.unit ?? result.defaultUnit,
-          reps: row.reps == null ? "" : String(row.reps),
-          rpe: row.rpe == null ? "" : String(row.rpe),
-        })),
-      );
+      setRows(toRows(result));
+      setCorrection("");
     },
-    onError: () => setError("Something went wrong reading that. Please try again."),
+    onError: () => setError("Something went wrong applying that change. Please try again."),
   });
 
   const save = useMutation({
@@ -99,10 +128,41 @@ function LogPage() {
       setSavedCount(result.saved);
       setRows(null);
       setText("");
+      setCorrection("");
       await queryClient.invalidateQueries({ queryKey: ["plan-sessions"] });
     },
     onError: () => setError("Couldn't save those sets. Please try again."),
   });
+
+  /** Corrections build on the rows currently on screen, including hand edits. */
+  function submitCorrection() {
+    if (!rows || !correction.trim()) return;
+    if (fixSpeech.listening) fixSpeech.stop();
+    const sets: ReviewRow[] = rows.map((row) => ({
+      exercise_name: row.exercise_name,
+      exercise_id: row.exercise_id,
+      set_number: row.set_number,
+      weight: row.weight.trim() === "" ? null : Number(row.weight),
+      unit: row.unit,
+      reps: row.reps.trim() === "" ? null : Math.trunc(Number(row.reps)),
+      rpe: row.rpe.trim() === "" ? null : Number(row.rpe),
+    }));
+    correct.mutate({
+      data: {
+        correction: correction.trim(),
+        originalText: text.trim() || null,
+        sets: sets.map(({ exercise_name, set_number, weight, unit, reps, rpe }) => ({
+          exercise_name,
+          set_number,
+          weight,
+          unit,
+          reps,
+          rpe,
+        })),
+      },
+    });
+  }
+
 
   function update(index: number, patch: Partial<Row>) {
     setRows((current) =>
