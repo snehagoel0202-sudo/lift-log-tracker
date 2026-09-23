@@ -123,17 +123,17 @@ function ProgressPage() {
                 <div className="mt-3 h-48 w-full">
                   <ResponsiveContainer width="100%" height="100%">
                     <LineChart data={line.points} margin={{ top: 5, right: 8, bottom: 0, left: -20 }}>
-                      <CartesianGrid stroke="hsl(var(--border))" strokeDasharray="3 3" />
+                      <CartesianGrid stroke="var(--border)" strokeDasharray="3 3" />
                       <XAxis
                         dataKey="date"
                         tickFormatter={formatDayLabel}
-                        tick={{ fontSize: 11, fill: "hsl(var(--muted-foreground))" }}
+                        tick={{ fontSize: 11, fill: "var(--muted-foreground)" }}
                       />
-                      <YAxis tick={{ fontSize: 11, fill: "hsl(var(--muted-foreground))" }} />
+                      <YAxis tick={{ fontSize: 11, fill: "var(--muted-foreground)" }} />
                       <Tooltip
                         contentStyle={{
-                          background: "hsl(var(--card))",
-                          border: "1px solid hsl(var(--border))",
+                          background: "var(--card)",
+                          border: "1px solid var(--border)",
                           borderRadius: 12,
                           fontSize: 12,
                         }}
@@ -144,7 +144,7 @@ function ProgressPage() {
                         type="monotone"
                         dataKey="weight"
                         name="Heaviest"
-                        stroke="hsl(var(--primary))"
+                        stroke="var(--primary)"
                         strokeWidth={2}
                         dot
                       />
@@ -152,7 +152,7 @@ function ProgressPage() {
                         type="monotone"
                         dataKey="e1rm"
                         name="Est. 1RM"
-                        stroke="hsl(var(--muted-foreground))"
+                        stroke="var(--muted-foreground)"
                         strokeDasharray="4 4"
                         strokeWidth={2}
                         dot={false}
