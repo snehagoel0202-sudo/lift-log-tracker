@@ -63,25 +63,35 @@ export const approvedPlanQueryOptions = {
   queryFn: () => fetchPlanByStatus("approved"),
 };
 
-export type ArchivedPlanSummary = {
-  id: string;
-  week_start: string;
-  summary: string | null;
-};
-
 export const archivedPlansQueryOptions = {
   queryKey: ["plan", "archived"] as const,
-  queryFn: async (): Promise<ArchivedPlanSummary[]> => {
+  queryFn: async (): Promise<Plan[]> => {
     const { data: userData } = await supabase.auth.getUser();
     if (!userData.user) return [];
     const { data, error } = await supabase
       .from("plans")
-      .select("id, week_start, summary")
+      .select(
+        "id, week_start, status, summary, plan_items(id, day_number, position, sets, rep_min, rep_max, target_weight, unit, rationale, exercises(name, muscle_group))",
+      )
       .eq("user_id", userData.user.id)
       .eq("status", "archived")
       .order("week_start", { ascending: false });
     if (error) throw error;
-    return data ?? [];
+    return (data ?? []).map((row) => {
+      const items = ((row as unknown as { plan_items: PlanItem[] }).plan_items ?? [])
+        .map((item) => ({
+          ...item,
+          target_weight: item.target_weight == null ? null : Number(item.target_weight),
+        }))
+        .sort((a, b) => a.day_number - b.day_number || a.position - b.position);
+      return {
+        id: row.id,
+        week_start: row.week_start,
+        status: row.status as PlanStatus,
+        summary: row.summary,
+        items,
+      };
+    });
   },
 };
 
