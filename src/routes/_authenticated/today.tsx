@@ -68,7 +68,7 @@ function Today() {
 
   const save = useMutation({
     mutationFn: useServerFn(saveWorkout),
-    onSuccess: async (result) => {
+    onSuccess: async (result: { saved: number }) => {
       setSavedCount(result.saved);
       setReviewing(false);
       setRows(Object.fromEntries(items.map((item) => [item.id, rowsForItem(item)])));
