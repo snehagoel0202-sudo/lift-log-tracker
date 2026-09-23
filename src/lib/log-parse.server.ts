@@ -170,3 +170,31 @@ async function callParser(input: AiInput[]): Promise<ParsedSet[]> {
   if (!sets.length) throw new ParseUnreadableError("No usable sets");
   return sets;
 }
+
+/** Parse dictated/typed workout text into one object per set. AI writes no data itself. */
+export function parseWorkoutText(text: string): Promise<ParsedSet[]> {
+  return callParser([
+    { role: "developer", content: [{ type: "input_text", text: INSTRUCTIONS }] },
+    { role: "user", content: [{ type: "input_text", text }] },
+  ]);
+}
+
+/** Apply a plain-words correction to the sets already on the review card. */
+export function applyCorrection(
+  currentSets: ParsedSet[],
+  correction: string,
+  originalText: string | null,
+): Promise<ParsedSet[]> {
+  const payload = [
+    originalText ? `What I originally said: ${originalText}` : null,
+    `Current sets JSON: ${JSON.stringify({ sets: currentSets })}`,
+    `Correction: ${correction}`,
+  ]
+    .filter(Boolean)
+    .join("\n\n");
+  return callParser([
+    { role: "developer", content: [{ type: "input_text", text: CORRECTION_INSTRUCTIONS }] },
+    { role: "user", content: [{ type: "input_text", text: payload }] },
+  ]);
+}
+
