@@ -50,6 +50,7 @@ export function useSpeechRecognition(onFinalChunk: (text: string) => void) {
   const startedAtRef = useRef(0);
   const shortRunsRef = useRef(0);
   const sessionHeardRef = useRef(false);
+  const interimRef = useRef("");
 
   const callbackRef = useRef(onFinalChunk);
   callbackRef.current = onFinalChunk;
@@ -111,10 +112,12 @@ export function useSpeechRecognition(onFinalChunk: (text: string) => void) {
         shortRunsRef.current = 0;
       }
 
+      interimRef.current = interimText;
       setInterim(interimText);
       const trimmed = finalText.trim();
       if (trimmed) {
         callbackRef.current(trimmed);
+        interimRef.current = "";
         setInterim("");
       }
     };
@@ -135,6 +138,9 @@ export function useSpeechRecognition(onFinalChunk: (text: string) => void) {
 
     recognition.onend = () => {
       recognitionRef.current = null;
+      const unfinishedText = interimRef.current.trim();
+      if (unfinishedText) callbackRef.current(unfinishedText);
+      interimRef.current = "";
       setInterim("");
 
       const ranFor = Date.now() - startedAtRef.current;
@@ -180,6 +186,7 @@ export function useSpeechRecognition(onFinalChunk: (text: string) => void) {
   const start = useCallback(async () => {
     if (!getCtor()) return;
     setError(null);
+    interimRef.current = "";
     setInterim("");
     setHeardSomething(false);
     shortRunsRef.current = 0;
@@ -210,6 +217,11 @@ export function useSpeechRecognition(onFinalChunk: (text: string) => void) {
   }, [launch]);
 
   const stop = useCallback(() => {
+    // Some mobile browsers never emit a final result after stop/abort. Preserve
+    // the visible interim words before detaching the recognition handlers.
+    const unfinishedText = interimRef.current.trim();
+    if (unfinishedText) callbackRef.current(unfinishedText);
+    interimRef.current = "";
     teardown();
     setListening(false);
     setInterim("");
