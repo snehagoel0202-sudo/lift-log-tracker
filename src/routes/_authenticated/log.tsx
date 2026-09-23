@@ -1,8 +1,14 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { useCallback, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
+import { format } from "date-fns";
+import { CalendarIcon } from "lucide-react";
 import { useServerFn } from "@tanstack/react-start";
 import { AppScreen } from "@/components/AppScreen";
+import { Button } from "@/components/ui/button";
+import { Calendar } from "@/components/ui/calendar";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { cn } from "@/lib/utils";
 import { useSpeechRecognition } from "@/hooks/use-speech-recognition";
 import { localDateString } from "@/lib/checkins";
 import { exercisesQueryOptions } from "@/lib/exercises";
@@ -58,6 +64,12 @@ function LogPage() {
   const [error, setError] = useState<string | null>(null);
   const [savedCount, setSavedCount] = useState<number | null>(null);
   const [correction, setCorrection] = useState("");
+  const [workoutDate, setWorkoutDate] = useState<Date | undefined>(undefined);
+
+  // Set after mount so server and browser always render the same first paint.
+  useEffect(() => {
+    setWorkoutDate(new Date());
+  }, []);
 
   const appendTranscript = useCallback((chunk: string) => {
     setText((current) => (current.trim() ? `${current.replace(/\s+$/, "")} ${chunk}` : chunk));
@@ -177,7 +189,7 @@ function LogPage() {
     setError(null);
     save.mutate({
       data: {
-        date: today,
+        date: workoutDate ? format(workoutDate, "yyyy-MM-dd") : today,
         sets: rows.map((row) => ({
           exercise_id: row.exercise_id!,
           set_number: row.set_number,
@@ -194,7 +206,9 @@ function LogPage() {
     <AppScreen title="Log" subtitle="Type or dictate what you did — you review it before anything is saved.">
       {savedCount !== null ? (
         <div className="mb-5 rounded-2xl border border-primary/40 bg-primary/10 p-4 text-sm text-foreground">
-          Saved {savedCount} {savedCount === 1 ? "set" : "sets"} to today's workout.
+          {workoutDate && format(workoutDate, "yyyy-MM-dd") !== today
+            ? `Saved ${savedCount} ${savedCount === 1 ? "set" : "sets"} to ${format(workoutDate, "EEE d MMM yyyy")}.`
+            : `Saved ${savedCount} ${savedCount === 1 ? "set" : "sets"} to today's workout.`}
         </div>
       ) : null}
 
@@ -277,6 +291,35 @@ function LogPage() {
             <p className="mt-1 text-sm text-muted-foreground">
               Nothing is saved until you tap Save. Empty fields stay empty.
             </p>
+            <label className="mt-4 block">
+              <span className="text-xs text-muted-foreground">Workout date</span>
+              <Popover>
+                <PopoverTrigger asChild>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    className={cn(
+                      "mt-1 h-12 w-full justify-start text-left font-normal",
+                      !workoutDate && "text-muted-foreground",
+                    )}
+                  >
+                    <CalendarIcon className="h-5 w-5" />
+                    {workoutDate ? format(workoutDate, "EEE d MMM yyyy") : <span>Pick a date</span>}
+                  </Button>
+                </PopoverTrigger>
+                <PopoverContent className="w-auto p-0" align="start">
+                  <Calendar
+                    mode="single"
+                    selected={workoutDate}
+                    onSelect={setWorkoutDate}
+                    disabled={[{ after: new Date() }]}
+                    {...(workoutDate ? { defaultMonth: workoutDate } : {})}
+                    initialFocus
+                    className={cn("p-3 pointer-events-auto")}
+                  />
+                </PopoverContent>
+              </Popover>
+            </label>
           </div>
 
           {rows.map((row, index) => (
