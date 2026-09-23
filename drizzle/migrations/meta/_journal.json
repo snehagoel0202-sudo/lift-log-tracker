@@ -43,6 +43,13 @@
       "when": 1790146807559,
       "tag": "0005_add_soft_delete_columns",
       "breakpoints": true
+    },
+    {
+      "idx": 6,
+      "version": "7",
+      "when": 1790157495429,
+      "tag": "0006_add_bicep_curl_and_aliases",
+      "breakpoints": true
     }
   ]
 }

@@ -63,27 +63,56 @@ export const reviewWorkoutText = createServerFn({ method: "POST" })
       return prev[b.length]!;
     };
 
+    /** Loose word-level match: "dumbbell just press" should still find "dumbbell bench press". */
+    const tokens = (value: string) => normalize(value).split(" ").filter(Boolean);
+    const wordsMatch = (a: string, b: string) => {
+      if (a === b) return true;
+      if (a.length >= 4 && (a.startsWith(b) || b.startsWith(a))) return true;
+      const limit = Math.min(a.length, b.length) <= 5 ? 1 : 2;
+      return distance(a, b) <= limit;
+    };
+    const similarity = (said: string[], candidate: string[]) => {
+      const pool = [...candidate];
+      let hits = 0;
+      for (const word of said) {
+        const index = pool.findIndex((other) => wordsMatch(word, other));
+        if (index >= 0) {
+          hits += 1;
+          pool.splice(index, 1);
+        }
+      }
+      return hits / Math.max(said.length, candidate.length);
+    };
+
     /** Exact key first, then the single closest near-miss (never a guess between ties). */
     const matchExercise = (name: string): string | null => {
       const key = normalize(name);
       if (!key) return null;
       const exact = byName.get(key);
       if (exact) return exact;
+
+      const said = tokens(key);
       const limit = key.length <= 5 ? 1 : key.length <= 9 ? 2 : 3;
       let best: { id: string; score: number } | null = null;
       let tied = false;
       for (const [candidate, id] of byName) {
-        const score = distance(key, candidate);
-        if (score > limit) continue;
-        if (!best || score < best.score) {
+        // Higher score is better: whole-string closeness or word-level overlap.
+        const edit = distance(key, candidate);
+        const score = Math.max(
+          edit <= limit ? 1 - edit / (limit + 1) : 0,
+          similarity(said, tokens(candidate)),
+        );
+        if (score < 0.6) continue;
+        if (!best || score > best.score + 0.001) {
           best = { id, score };
           tied = false;
-        } else if (score === best.score && id !== best.id) {
+        } else if (Math.abs(score - best.score) <= 0.001 && id !== best.id) {
           tied = true;
         }
       }
       return best && !tied ? best.id : null;
     };
+
 
     let parsed;
     try {
