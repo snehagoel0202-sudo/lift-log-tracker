@@ -11,6 +11,7 @@ import {
   YAxis,
 } from "recharts";
 import { AppScreen } from "@/components/AppScreen";
+import { EmptyState, ErrorState, LoadingBlock } from "@/components/ScreenState";
 import { exercisesQueryOptions } from "@/lib/exercises";
 import {
   bestSetsByUnit,
@@ -41,7 +42,7 @@ export const Route = createFileRoute("/_authenticated/progress")({
 });
 
 const inputClass =
-  "h-11 w-full rounded-xl border border-border bg-background px-3 text-center text-base text-foreground";
+  "h-12 w-full min-w-0 rounded-xl border border-border bg-background px-1.5 text-center text-base text-foreground";
 
 function ProgressPage() {
   const historyQuery = useQuery(historyQueryOptions);
@@ -72,7 +73,7 @@ function ProgressPage() {
     <AppScreen title="Progress" subtitle="Your week so far, how each lift is trending, and every workout you've logged.">
       <section className="mb-6 rounded-2xl border border-border bg-card p-4">
         <p className="display-title text-xl text-foreground">THIS WEEK</p>
-        <div className="mt-3 grid grid-cols-3 gap-3 text-center">
+        <div className="mt-3 grid grid-cols-3 gap-2 text-center">
           <div>
             <p className="display-title text-3xl text-primary">{week.workouts}</p>
             <p className="text-xs text-muted-foreground">Workouts</p>
@@ -82,7 +83,7 @@ function ProgressPage() {
             <p className="text-xs text-muted-foreground">Sets</p>
           </div>
           <div>
-            <p className="display-title text-3xl text-primary">
+            <p className="display-title break-words text-2xl leading-tight text-primary">
               {week.volume.length === 0
                 ? "—"
                 : week.volume.map((v) => Math.round(v.total).toLocaleString("en-GB")).join(" / ")}
@@ -96,10 +97,13 @@ function ProgressPage() {
 
       <section className="mb-6">
         <p className="display-title mb-3 text-xl text-foreground">EXERCISE PROGRESS</p>
-        {loggedExerciseIds.length === 0 ? (
-          <p className="rounded-2xl border border-dashed border-border p-6 text-center text-sm text-muted-foreground">
-            Log a workout and your lift trends show up here.
-          </p>
+        {historyQuery.isLoading ? (
+          <LoadingBlock lines={2} label="Loading your lifts" />
+        ) : loggedExerciseIds.length === 0 ? (
+          <EmptyState
+            title="No lifts to chart yet"
+            hint="Log a workout and your lift trends show up here."
+          />
         ) : (
           <div className="space-y-4">
             <select
@@ -185,11 +189,18 @@ function ProgressPage() {
       <section>
         <p className="display-title mb-3 text-xl text-foreground">HISTORY</p>
         {historyQuery.isLoading ? (
-          <p className="text-sm text-muted-foreground">Loading your workouts…</p>
+          <LoadingBlock lines={3} label="Loading your workouts" />
+        ) : historyQuery.isError ? (
+          <ErrorState
+            message="We couldn't load your workouts."
+            onRetry={() => historyQuery.refetch()}
+            retrying={historyQuery.isFetching}
+          />
         ) : sessions.length === 0 ? (
-          <p className="rounded-2xl border border-dashed border-border p-6 text-center text-sm text-muted-foreground">
-            No workouts logged yet.
-          </p>
+          <EmptyState
+            title="No workouts logged yet"
+            hint="Finish a session on Today, or type one in on Log, and it shows up here."
+          />
         ) : (
           <div className="space-y-3">
             {sessions.map((session) => (
@@ -343,8 +354,8 @@ function SetRow({ set, name }: { set: LoggedSet; name: string }) {
 
   return (
     <div className="rounded-xl border border-border p-3">
-      <div className="flex items-center justify-between gap-3">
-        <div>
+      <div className="flex flex-wrap items-center justify-between gap-2">
+        <div className="min-w-0">
           <p className="font-semibold text-foreground">{name}</p>
           <p className="text-sm text-muted-foreground">
             Set {set.set_number} ·{" "}

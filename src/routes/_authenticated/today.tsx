@@ -4,6 +4,7 @@ import { useEffect, useMemo, useState } from "react";
 import { useServerFn } from "@tanstack/react-start";
 import { AppScreen } from "@/components/AppScreen";
 import { CheckinCard } from "@/components/CheckinCard";
+import { EmptyState, ErrorState, LoadingBlock } from "@/components/ScreenState";
 import { localDateString } from "@/lib/checkins";
 import { approvedPlanQueryOptions, groupByDay, type PlanItem } from "@/lib/plans";
 import { planSessionsQueryOptions } from "@/lib/workouts";
@@ -42,7 +43,7 @@ function rowsForItem(item: PlanItem): SetRow[] {
 }
 
 const inputClass =
-  "h-11 w-full rounded-xl border border-border bg-background px-3 text-center text-base text-foreground";
+  "h-12 w-full min-w-0 rounded-xl border border-border bg-background px-1.5 text-center text-base text-foreground";
 
 function Today() {
   const today = localDateString();
@@ -117,7 +118,20 @@ function Today() {
     return (
       <AppScreen title="Today">
         <CheckinCard />
-        <p className="text-sm text-muted-foreground">Loading your workout…</p>
+        <LoadingBlock lines={4} label="Loading your workout" />
+      </AppScreen>
+    );
+  }
+
+  if (planQuery.isError) {
+    return (
+      <AppScreen title="Today">
+        <CheckinCard />
+        <ErrorState
+          message="We couldn't load today's workout."
+          onRetry={() => planQuery.refetch()}
+          retrying={planQuery.isFetching}
+        />
       </AppScreen>
     );
   }
@@ -126,18 +140,17 @@ function Today() {
     return (
       <AppScreen title="Today" subtitle="No approved plan yet.">
         <CheckinCard />
-        <div className="rounded-2xl border border-border bg-card p-6 text-center">
-          <p className="font-semibold text-foreground">You don't have a plan yet</p>
-          <p className="mt-1 text-sm text-muted-foreground">
-            Build a weekly plan first, then your sessions show up here.
-          </p>
+        <EmptyState
+          title="You don't have a plan yet"
+          hint="Build a weekly plan first, then your sessions show up here."
+        >
           <Link
             to="/plan"
-            className="mt-4 inline-flex h-12 items-center justify-center rounded-xl bg-primary px-6 font-semibold text-primary-foreground"
+            className="inline-flex min-h-12 items-center justify-center rounded-xl bg-primary px-6 font-semibold text-primary-foreground"
           >
             Go to Plan
           </Link>
-        </div>
+        </EmptyState>
       </AppScreen>
     );
   }
@@ -248,22 +261,24 @@ function Today() {
             </div>
 
             <div className="mt-3 space-y-2">
-              <div className="flex items-center gap-2 text-xs text-muted-foreground">
-                <span className="w-9" />
-                <span className="flex-1 text-center">Weight ({item.unit})</span>
+              <div className="flex items-center gap-1.5 text-[11px] text-muted-foreground">
+                <span className="w-11 shrink-0" />
+                <span className="flex-1 text-center">{item.unit}</span>
                 <span className="flex-1 text-center">Reps</span>
                 <span className="flex-1 text-center">RPE</span>
-                <span className="w-8" />
+                <span className="w-11 shrink-0" />
               </div>
               {(rows[item.id] ?? []).map((row, index) => (
-                <div key={index} className="flex items-center gap-2">
-                  <input
-                    type="checkbox"
-                    aria-label={`Set ${index + 1} done`}
-                    checked={row.done}
-                    onChange={(event) => update(item.id, index, { done: event.target.checked })}
-                    className="h-9 w-9 shrink-0 rounded-lg accent-primary"
-                  />
+                <div key={index} className="flex items-center gap-1.5">
+                  <label className="flex h-12 w-11 shrink-0 items-center justify-center rounded-lg border border-border">
+                    <input
+                      type="checkbox"
+                      aria-label={`Set ${index + 1} done`}
+                      checked={row.done}
+                      onChange={(event) => update(item.id, index, { done: event.target.checked })}
+                      className="h-6 w-6 rounded accent-primary"
+                    />
+                  </label>
                   <input
                     inputMode="decimal"
                     value={row.weight}
@@ -295,7 +310,7 @@ function Today() {
                         [item.id]: (current[item.id] ?? []).filter((_, i) => i !== index),
                       }))
                     }
-                    className="h-9 w-8 shrink-0 rounded-lg border border-border text-muted-foreground"
+                    className="h-11 w-11 shrink-0 rounded-lg border border-border text-lg text-muted-foreground"
                   >
                     ×
                   </button>

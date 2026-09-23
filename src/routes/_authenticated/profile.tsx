@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { AppScreen } from "@/components/AppScreen";
 import { ChoiceList } from "@/components/ChoiceList";
+import { LoadingBlock } from "@/components/ScreenState";
 import {
   DAYS,
   EQUIPMENT,
@@ -119,7 +120,9 @@ function ProfilePage() {
           </p>
         </section>
 
-        {editing && draft ? (
+        {isLoading ? (
+          <LoadingBlock lines={3} label="Loading your profile" />
+        ) : editing && draft ? (
           <>
             <section className="rounded-2xl border border-border bg-card p-5">
               <label className="text-xs font-medium tracking-wide text-muted-foreground">
@@ -251,6 +254,10 @@ function ProfilePage() {
         >
           Sign out
         </button>
+
+        <p className="pt-1 text-center text-xs text-muted-foreground">
+          LiftLog gives general fitness guidance, not medical advice.
+        </p>
       </div>
     </AppScreen>
   );

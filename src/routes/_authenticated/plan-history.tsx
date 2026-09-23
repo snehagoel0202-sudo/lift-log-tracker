@@ -1,6 +1,7 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
 import { AppScreen } from "@/components/AppScreen";
+import { EmptyState, ErrorState, LoadingBlock } from "@/components/ScreenState";
 import { archivedPlansQueryOptions, groupByDay, type Plan } from "@/lib/plans";
 
 export const Route = createFileRoute("/_authenticated/plan-history")({
@@ -60,19 +61,23 @@ function PlanHistoryPage() {
     <AppScreen title="Past plans" subtitle="Plans you've replaced, kept here for reference.">
       <Link
         to="/plan"
-        className="mb-4 inline-block text-sm text-muted-foreground underline underline-offset-4"
+        className="-ml-2 mb-3 inline-flex min-h-11 items-center px-2 text-sm text-muted-foreground underline underline-offset-4"
       >
         ← Back to Plan
       </Link>
       {archived.isLoading ? (
-        <p className="text-sm text-muted-foreground">Loading past plans…</p>
+        <LoadingBlock lines={3} label="Loading past plans" />
+      ) : archived.isError ? (
+        <ErrorState
+          message="We couldn't load your past plans."
+          onRetry={() => archived.refetch()}
+          retrying={archived.isFetching}
+        />
       ) : !archived.data?.length ? (
-        <div className="rounded-2xl border border-dashed border-border p-8 text-center">
-          <p className="font-semibold text-foreground">No past plans</p>
-          <p className="mt-1 text-sm text-muted-foreground">
-            When you approve a new plan, the old one moves here.
-          </p>
-        </div>
+        <EmptyState
+          title="No past plans"
+          hint="When you approve a new plan, the old one moves here."
+        />
       ) : (
         <div className="space-y-6">
           {archived.data.map((plan) => (
