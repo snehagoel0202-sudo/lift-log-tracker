@@ -73,7 +73,7 @@ function ProgressPage() {
     <AppScreen title="Progress" subtitle="Your week so far, how each lift is trending, and every workout you've logged.">
       <section className="mb-6 rounded-2xl border border-border bg-card p-4">
         <p className="display-title text-xl text-foreground">THIS WEEK</p>
-        <div className="mt-3 grid grid-cols-3 gap-3 text-center">
+        <div className="mt-3 grid grid-cols-3 gap-2 text-center">
           <div>
             <p className="display-title text-3xl text-primary">{week.workouts}</p>
             <p className="text-xs text-muted-foreground">Workouts</p>
@@ -83,7 +83,7 @@ function ProgressPage() {
             <p className="text-xs text-muted-foreground">Sets</p>
           </div>
           <div>
-            <p className="display-title text-3xl text-primary">
+            <p className="display-title break-words text-2xl leading-tight text-primary">
               {week.volume.length === 0
                 ? "—"
                 : week.volume.map((v) => Math.round(v.total).toLocaleString("en-GB")).join(" / ")}
@@ -354,8 +354,8 @@ function SetRow({ set, name }: { set: LoggedSet; name: string }) {
 
   return (
     <div className="rounded-xl border border-border p-3">
-      <div className="flex items-center justify-between gap-3">
-        <div>
+      <div className="flex flex-wrap items-center justify-between gap-2">
+        <div className="min-w-0">
           <p className="font-semibold text-foreground">{name}</p>
           <p className="text-sm text-muted-foreground">
             Set {set.set_number} ·{" "}
