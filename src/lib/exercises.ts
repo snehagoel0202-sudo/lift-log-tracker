@@ -40,7 +40,7 @@ export async function fetchExercises(): Promise<Exercise[]> {
   const { data, error } = await supabase
     .from("exercises")
     .select(
-      "id, name, aliases, muscle_group, equipment, is_compound, weight_step, impact_level, postpartum_safe",
+      "id, name, aliases, muscle_group, equipment, is_compound, weight_step, impact_level, postpartum_safe, movement_pattern, variation_of",
     )
     .order("muscle_group")
     .order("name");
