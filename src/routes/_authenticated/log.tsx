@@ -189,7 +189,7 @@ function LogPage() {
     setError(null);
     save.mutate({
       data: {
-        date: today,
+        date: workoutDate ? format(workoutDate, "yyyy-MM-dd") : today,
         sets: rows.map((row) => ({
           exercise_id: row.exercise_id!,
           set_number: row.set_number,
