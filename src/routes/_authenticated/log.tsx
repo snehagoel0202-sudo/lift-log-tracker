@@ -1,8 +1,9 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { useState } from "react";
+import { useCallback, useState } from "react";
 import { useServerFn } from "@tanstack/react-start";
 import { AppScreen } from "@/components/AppScreen";
+import { useSpeechRecognition } from "@/hooks/use-speech-recognition";
 import { localDateString } from "@/lib/checkins";
 import { exercisesQueryOptions } from "@/lib/exercises";
 import { reviewWorkoutText, saveLoggedWorkout, type ReviewResult } from "@/lib/log.functions";
@@ -49,6 +50,11 @@ function LogPage() {
   const [rows, setRows] = useState<Row[] | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [savedCount, setSavedCount] = useState<number | null>(null);
+
+  const appendTranscript = useCallback((chunk: string) => {
+    setText((current) => (current.trim() ? `${current.replace(/\s+$/, "")} ${chunk}` : chunk));
+  }, []);
+  const speech = useSpeechRecognition(appendTranscript);
 
   const review = useMutation({
     mutationFn: useServerFn(reviewWorkoutText),
@@ -127,9 +133,57 @@ function LogPage() {
 
       {rows === null ? (
         <div className="space-y-4">
+          {speech.supported ? (
+            speech.listening ? (
+              <div className="rounded-2xl border border-primary/50 bg-primary/10 p-4">
+                <div className="flex items-center gap-3">
+                  <span className="relative flex h-3 w-3 shrink-0">
+                    <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-primary opacity-75" />
+                    <span className="relative inline-flex h-3 w-3 rounded-full bg-primary" />
+                  </span>
+                  <span className="flex-1 text-sm font-semibold text-foreground">
+                    Listening… speak your sets
+                  </span>
+                  <button
+                    type="button"
+                    onClick={speech.stop}
+                    className="h-11 rounded-xl border border-border bg-card px-4 text-sm font-semibold text-foreground"
+                  >
+                    Stop
+                  </button>
+                </div>
+                {speech.interim ? (
+                  <p className="mt-2 text-sm text-muted-foreground">{speech.interim}…</p>
+                ) : null}
+              </div>
+            ) : (
+              <button
+                type="button"
+                onClick={speech.start}
+                className="flex h-12 w-full items-center justify-center gap-2 rounded-xl border border-primary/60 bg-primary/10 font-semibold text-foreground"
+              >
+                <svg
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="2"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  className="h-5 w-5 text-primary"
+                  aria-hidden="true"
+                >
+                  <path d="M12 2a3 3 0 0 0-3 3v7a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3Z" />
+                  <path d="M19 10v2a7 7 0 0 1-14 0v-2" />
+                  <path d="M12 19v3" />
+                </svg>
+                Tap to speak
+              </button>
+            )
+          ) : null}
           <textarea
-            value={text}
+            value={speech.listening && speech.interim ? `${text} ${speech.interim}`.trimStart() : text}
             onChange={(event) => setText(event.target.value)}
+            readOnly={speech.listening}
             placeholder={HINT}
             rows={6}
             className="w-full rounded-2xl border border-border bg-background p-4 text-base text-foreground placeholder:text-muted-foreground"
