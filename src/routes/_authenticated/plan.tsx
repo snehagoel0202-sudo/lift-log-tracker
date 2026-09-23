@@ -171,19 +171,55 @@ function PlanPage() {
           )}
         </div>
 
-        {!draft.data ? (
+        {!draft.data && !choosingScope ? (
           <button
             type="button"
-            onClick={() => recommend.mutate()}
+            onClick={() => setChoosingScope(true)}
             disabled={busy}
             className="min-h-14 w-full rounded-xl bg-primary font-semibold text-primary-foreground transition-all hover:brightness-110 disabled:opacity-60"
           >
-            {recommend.isPending
-              ? "Building your plan…"
-              : approved.data
-                ? "Recommend a new plan"
-                : "Recommend my plan"}
+            {approved.data ? "Recommend a new plan" : "Recommend my plan"}
           </button>
+        ) : null}
+
+        {choosingScope ? (
+          <div className="rounded-2xl border border-border bg-card p-4">
+            <p className="font-semibold text-foreground">What should the new plan cover?</p>
+            <p className="mt-1 text-sm text-muted-foreground">
+              Feeling low on energy today? You can get a lighter session just for today and keep
+              your week as it is.
+            </p>
+            <div className="mt-3 space-y-2">
+              <button
+                type="button"
+                onClick={() => recommend.mutate("day")}
+                disabled={busy}
+                className="min-h-14 w-full rounded-xl bg-primary font-semibold text-primary-foreground transition-all hover:brightness-110 disabled:opacity-60"
+              >
+                {recommend.isPending && recommend.variables === "day"
+                  ? "Building today's session…"
+                  : "Just today"}
+              </button>
+              <button
+                type="button"
+                onClick={() => recommend.mutate("week")}
+                disabled={busy}
+                className="min-h-14 w-full rounded-xl bg-primary font-semibold text-primary-foreground transition-all hover:brightness-110 disabled:opacity-60"
+              >
+                {recommend.isPending && recommend.variables === "week"
+                  ? "Building your week…"
+                  : "The whole week"}
+              </button>
+              <button
+                type="button"
+                onClick={() => setChoosingScope(false)}
+                disabled={busy}
+                className="min-h-12 w-full rounded-xl border border-border font-semibold text-foreground disabled:opacity-60"
+              >
+                Cancel
+              </button>
+            </div>
+          </div>
         ) : null}
 
       </section>
