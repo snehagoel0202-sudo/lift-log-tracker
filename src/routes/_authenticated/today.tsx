@@ -63,7 +63,6 @@ function Today() {
     if (!items.length) return;
     setRows(Object.fromEntries(items.map((item) => [item.id, rowsForItem(item)])));
     setReviewing(false);
-    setSavedCount(null);
   }, [items]);
 
   const save = useMutation({
@@ -83,6 +82,7 @@ function Today() {
   );
 
   function update(itemId: string, index: number, patch: Partial<SetRow>) {
+    setSavedCount(null);
     setRows((current) => {
       const list = [...(current[itemId] ?? [])];
       list[index] = { ...list[index]!, ...patch };
