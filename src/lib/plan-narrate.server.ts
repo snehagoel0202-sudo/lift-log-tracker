@@ -76,20 +76,35 @@ export async function narratePlan(draft: PlanDraft): Promise<Narration | null> {
     },
   };
 
-  const response = await fetch("https://ai.gateway.lovable.dev/v1/responses", {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-      "Lovable-API-Key": key,
-      "X-Lovable-AIG-SDK": "fetch",
-    },
-    body: JSON.stringify(payload),
-  });
+  // Hard cap: if the AI is slow, give up and let the rule rationales stand,
+  // otherwise the whole request can die without a response.
+  const abort = new AbortController();
+  const timer = setTimeout(() => abort.abort(), 20_000);
+
+  let response: Response;
+  try {
+    response = await fetch("https://ai.gateway.lovable.dev/v1/responses", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "Lovable-API-Key": key,
+        "X-Lovable-AIG-SDK": "fetch",
+      },
+      body: JSON.stringify(payload),
+      signal: abort.signal,
+    });
+  } catch (error) {
+    clearTimeout(timer);
+    console.error("[plan] AI narration request failed", error);
+    return null;
+  }
 
   if (!response.ok || !response.body) {
+    clearTimeout(timer);
     console.error("[plan] AI narration failed", response.status, await response.text());
     return null;
   }
+
 
   // Accumulate the streamed text; nothing renders progressively here.
   const reader = response.body.getReader();
