@@ -206,7 +206,9 @@ function LogPage() {
     <AppScreen title="Log" subtitle="Type or dictate what you did — you review it before anything is saved.">
       {savedCount !== null ? (
         <div className="mb-5 rounded-2xl border border-primary/40 bg-primary/10 p-4 text-sm text-foreground">
-          Saved {savedCount} {savedCount === 1 ? "set" : "sets"} to today's workout.
+          {workoutDate && format(workoutDate, "yyyy-MM-dd") !== today
+            ? `Saved ${savedCount} ${savedCount === 1 ? "set" : "sets"} to ${format(workoutDate, "EEE d MMM yyyy")}.`
+            : `Saved ${savedCount} ${savedCount === 1 ? "set" : "sets"} to today's workout.`}
         </div>
       ) : null}
 
