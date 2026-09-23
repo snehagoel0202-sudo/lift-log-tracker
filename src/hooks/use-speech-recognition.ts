@@ -172,7 +172,9 @@ export function useSpeechRecognition(onFinalChunk: (text: string) => void) {
 
     recognitionRef.current = recognition;
     startedAtRef.current = Date.now();
+    sessionHeardRef.current = false;
     recognition.start();
+
   }, []);
 
   const start = useCallback(async () => {
