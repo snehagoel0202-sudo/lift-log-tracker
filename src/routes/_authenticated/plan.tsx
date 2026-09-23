@@ -256,7 +256,10 @@ function PlanPage() {
 
           <button
             type="button"
-            onClick={() => setChoosingScope(true)}
+            onClick={() => {
+              setChoosingScope(true);
+              window.scrollTo({ top: 0, behavior: "smooth" });
+            }}
             disabled={busy}
             className="min-h-12 w-full rounded-xl border border-border font-semibold text-foreground disabled:opacity-60"
           >
