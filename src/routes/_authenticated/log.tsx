@@ -64,6 +64,12 @@ function LogPage() {
   const [error, setError] = useState<string | null>(null);
   const [savedCount, setSavedCount] = useState<number | null>(null);
   const [correction, setCorrection] = useState("");
+  const [workoutDate, setWorkoutDate] = useState<Date | undefined>(undefined);
+
+  // Set after mount so server and browser always render the same first paint.
+  useEffect(() => {
+    setWorkoutDate(new Date());
+  }, []);
 
   const appendTranscript = useCallback((chunk: string) => {
     setText((current) => (current.trim() ? `${current.replace(/\s+$/, "")} ${chunk}` : chunk));
