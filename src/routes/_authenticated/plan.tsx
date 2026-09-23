@@ -129,16 +129,21 @@ function PlanPage() {
           )}
         </div>
 
-        {!approved.data && !draft.data ? (
+        {!draft.data ? (
           <button
             type="button"
             onClick={() => recommend.mutate()}
             disabled={busy}
             className="min-h-14 w-full rounded-xl bg-primary font-semibold text-primary-foreground transition-all hover:brightness-110 disabled:opacity-60"
           >
-            {recommend.isPending ? "Building your plan…" : "Recommend my plan"}
+            {recommend.isPending
+              ? "Building your plan…"
+              : approved.data
+                ? "Recommend a new plan"
+                : "Recommend my plan"}
           </button>
         ) : null}
+
       </section>
 
       {draft.data ? (
