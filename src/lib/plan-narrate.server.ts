@@ -76,46 +76,69 @@ export async function narratePlan(draft: PlanDraft): Promise<Narration | null> {
     },
   };
 
-  const response = await fetch("https://ai.gateway.lovable.dev/v1/responses", {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-      "Lovable-API-Key": key,
-      "X-Lovable-AIG-SDK": "fetch",
-    },
-    body: JSON.stringify(payload),
-  });
+  // Hard cap: if the AI is slow, give up and let the rule rationales stand,
+  // otherwise the whole request can die without a response.
+  const abort = new AbortController();
+  const timer = setTimeout(() => abort.abort(), 20_000);
+
+  let response: Response;
+  try {
+    response = await fetch("https://ai.gateway.lovable.dev/v1/responses", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "Lovable-API-Key": key,
+        "X-Lovable-AIG-SDK": "fetch",
+      },
+      body: JSON.stringify(payload),
+      signal: abort.signal,
+    });
+  } catch (error) {
+    clearTimeout(timer);
+    console.error("[plan] AI narration request failed", error);
+    return null;
+  }
 
   if (!response.ok || !response.body) {
+    clearTimeout(timer);
     console.error("[plan] AI narration failed", response.status, await response.text());
     return null;
   }
+
 
   // Accumulate the streamed text; nothing renders progressively here.
   const reader = response.body.getReader();
   const decoder = new TextDecoder();
   let buffer = "";
   let text = "";
-  while (true) {
-    const { value, done } = await reader.read();
-    if (done) break;
-    buffer += decoder.decode(value, { stream: true });
-    const lines = buffer.split("\n");
-    buffer = lines.pop() ?? "";
-    for (const line of lines) {
-      if (!line.startsWith("data:")) continue;
-      const data = line.slice(5).trim();
-      if (!data || data === "[DONE]") continue;
-      try {
-        const event = JSON.parse(data) as { type?: string; delta?: string };
-        if (event.type === "response.output_text.delta" && typeof event.delta === "string") {
-          text += event.delta;
+  try {
+    while (true) {
+      const { value, done } = await reader.read();
+      if (done) break;
+      buffer += decoder.decode(value, { stream: true });
+      const lines = buffer.split("\n");
+      buffer = lines.pop() ?? "";
+      for (const line of lines) {
+        if (!line.startsWith("data:")) continue;
+        const data = line.slice(5).trim();
+        if (!data || data === "[DONE]") continue;
+        try {
+          const event = JSON.parse(data) as { type?: string; delta?: string };
+          if (event.type === "response.output_text.delta" && typeof event.delta === "string") {
+            text += event.delta;
+          }
+        } catch {
+          // ignore keep-alives / partial frames
         }
-      } catch {
-        // ignore keep-alives / partial frames
       }
     }
+  } catch (error) {
+    console.error("[plan] AI narration stream aborted", error);
+    return null;
+  } finally {
+    clearTimeout(timer);
   }
+
 
   try {
     const parsed = JSON.parse(text) as {
