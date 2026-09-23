@@ -46,21 +46,40 @@ export function useSpeechRecognition(onFinalChunk: (text: string) => void) {
 
   const recognitionRef = useRef<SpeechRecognitionLike | null>(null);
   const wantListeningRef = useRef(false);
+  const restartTimerRef = useRef<number | null>(null);
+  const startedAtRef = useRef(0);
+  const shortRunsRef = useRef(0);
   const callbackRef = useRef(onFinalChunk);
   callbackRef.current = onFinalChunk;
+
+  const teardown = useCallback(() => {
+    wantListeningRef.current = false;
+    if (restartTimerRef.current !== null) {
+      window.clearTimeout(restartTimerRef.current);
+      restartTimerRef.current = null;
+    }
+    const recognition = recognitionRef.current;
+    recognitionRef.current = null;
+    if (recognition) {
+      recognition.onresult = null;
+      recognition.onerror = null;
+      recognition.onend = null;
+      recognition.onstart = null;
+      recognition.onspeechstart = null;
+      try {
+        recognition.abort();
+      } catch {
+        /* ignore */
+      }
+    }
+  }, []);
 
   useEffect(() => {
     setSupported(Boolean(getCtor()));
     return () => {
-      wantListeningRef.current = false;
-      try {
-        recognitionRef.current?.abort();
-      } catch {
-        /* ignore */
-      }
-      recognitionRef.current = null;
+      teardown();
     };
-  }, []);
+  }, [teardown]);
 
   const launch = useCallback(() => {
     const Ctor = getCtor();
@@ -81,7 +100,10 @@ export function useSpeechRecognition(onFinalChunk: (text: string) => void) {
         if (result.isFinal) finalText += `${result[0].transcript} `;
         else interimText += result[0].transcript;
       }
-      if (finalText || interimText) setHeardSomething(true);
+      if (finalText || interimText) {
+        setHeardSomething(true);
+        shortRunsRef.current = 0;
+      }
       setInterim(interimText);
       const trimmed = finalText.trim();
       if (trimmed) {
@@ -94,38 +116,76 @@ export function useSpeechRecognition(onFinalChunk: (text: string) => void) {
       const code = event?.error;
       if (code === "not-allowed" || code === "service-not-allowed") {
         wantListeningRef.current = false;
-        setError("Microphone access is blocked. Allow the mic for this site, then tap the mic again.");
+        setError(
+          "Microphone access is blocked here. Allow the mic for this site, or open LiftLog in its own browser tab.",
+        );
       } else if (code === "audio-capture") {
         wantListeningRef.current = false;
         setError("No microphone found. You can still type or use your keyboard's mic.");
       }
-      // "no-speech" / "aborted" are normal; onend restarts if still wanted.
+      // "no-speech" / "aborted" are normal; onend decides whether to restart.
     };
 
     recognition.onend = () => {
       recognitionRef.current = null;
       setInterim("");
-      if (wantListeningRef.current) {
-        // Pause-triggered end: keep the session alive.
-        try {
-          launch();
-          return;
-        } catch {
-          /* fall through to stopping */
-        }
+
+      const ranFor = Date.now() - startedAtRef.current;
+      if (ranFor < 400) shortRunsRef.current += 1;
+      else shortRunsRef.current = 0;
+
+      // Sessions that die instantly mean the mic is unavailable (e.g. blocked in
+      // an embedded preview). Never loop on that — it would freeze the page.
+      if (shortRunsRef.current >= 3) {
+        wantListeningRef.current = false;
+        setError(
+          "The microphone isn't available here. Allow mic access, or open LiftLog in its own browser tab. You can still type or use your keyboard's mic.",
+        );
       }
+
+      if (wantListeningRef.current) {
+        restartTimerRef.current = window.setTimeout(() => {
+          restartTimerRef.current = null;
+          if (!wantListeningRef.current) return;
+          try {
+            launch();
+          } catch {
+            wantListeningRef.current = false;
+            setListening(false);
+          }
+        }, 350);
+        return;
+      }
+
       setListening(false);
     };
 
     recognitionRef.current = recognition;
+    startedAtRef.current = Date.now();
     recognition.start();
   }, []);
 
-  const start = useCallback(() => {
+  const start = useCallback(async () => {
     if (!getCtor()) return;
     setError(null);
     setInterim("");
     setHeardSomething(false);
+    shortRunsRef.current = 0;
+
+    // Ask for the mic first so blocked access fails loudly instead of hanging.
+    try {
+      const media = navigator.mediaDevices;
+      if (media?.getUserMedia) {
+        const stream = await media.getUserMedia({ audio: true });
+        stream.getTracks().forEach((track) => track.stop());
+      }
+    } catch {
+      setError(
+        "Microphone access is blocked here. Allow the mic for this site, or open LiftLog in its own browser tab. You can still type or use your keyboard's mic.",
+      );
+      return;
+    }
+
     wantListeningRef.current = true;
     setListening(true);
     try {
@@ -138,27 +198,10 @@ export function useSpeechRecognition(onFinalChunk: (text: string) => void) {
   }, [launch]);
 
   const stop = useCallback(() => {
-    wantListeningRef.current = false;
-    const recognition = recognitionRef.current;
-    recognitionRef.current = null;
-    // Update the UI immediately — some browsers never fire onend after stop().
+    teardown();
     setListening(false);
     setInterim("");
-    if (!recognition) return;
-    try {
-      recognition.stop();
-    } catch {
-      /* ignore */
-    }
-    // Hard stop shortly after in case stop() is ignored.
-    window.setTimeout(() => {
-      try {
-        recognition.abort();
-      } catch {
-        /* ignore */
-      }
-    }, 400);
-  }, []);
+  }, [teardown]);
 
   return { supported, listening, interim, heardSomething, error, start, stop };
 }
