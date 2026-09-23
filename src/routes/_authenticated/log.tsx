@@ -183,6 +183,7 @@ function LogPage() {
           <textarea
             value={speech.listening && speech.interim ? `${text} ${speech.interim}`.trimStart() : text}
             onChange={(event) => setText(event.target.value)}
+            readOnly={speech.listening}
             placeholder={HINT}
             rows={6}
             className="w-full rounded-2xl border border-border bg-background p-4 text-base text-foreground placeholder:text-muted-foreground"
