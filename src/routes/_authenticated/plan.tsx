@@ -284,7 +284,10 @@ function PlanPage() {
       ) : null}
 
       <div className="mt-10 text-center">
-        <Link to="/plan-history" className="text-sm text-muted-foreground underline underline-offset-4">
+        <Link
+          to="/plan-history"
+          className="inline-flex min-h-12 items-center px-4 text-sm text-muted-foreground underline underline-offset-4"
+        >
           Past plans
         </Link>
       </div>
