@@ -446,7 +446,9 @@ function LogPage() {
               type="button"
               onClick={() => {
                 setRows(null);
+                setCorrection("");
                 setError(null);
+
               }}
               className="h-12 flex-1 rounded-xl border border-border font-semibold text-foreground"
             >
