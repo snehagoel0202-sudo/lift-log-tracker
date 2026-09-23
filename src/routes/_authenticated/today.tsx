@@ -306,18 +306,21 @@ function Today() {
             <button
               type="button"
               onClick={() =>
-                setRows((current) => ({
-                  ...current,
-                  [item.id]: [
-                    ...(current[item.id] ?? []),
-                    {
-                      done: false,
-                      weight: item.target_weight == null ? "" : String(item.target_weight),
-                      reps: String(item.rep_max),
-                      rpe: "",
-                    },
-                  ],
-                }))
+                setRows((current) => {
+                  const existing = current[item.id] ?? [];
+                  const last = existing[existing.length - 1];
+                  const newRow: SetRow = {
+                    done: false,
+                    weight:
+                      last?.weight ??
+                      (item.target_weight == null ? "" : String(item.target_weight)),
+                    reps: last?.reps ?? String(item.rep_max),
+                    rpe: "",
+                    weightEdited: false,
+                    repsEdited: false,
+                  };
+                  return { ...current, [item.id]: [...existing, newRow] };
+                })
               }
               className="mt-3 h-10 w-full rounded-xl border border-border text-sm font-semibold text-foreground"
             >
