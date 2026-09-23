@@ -289,6 +289,35 @@ function LogPage() {
             <p className="mt-1 text-sm text-muted-foreground">
               Nothing is saved until you tap Save. Empty fields stay empty.
             </p>
+            <label className="mt-4 block">
+              <span className="text-xs text-muted-foreground">Workout date</span>
+              <Popover>
+                <PopoverTrigger asChild>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    className={cn(
+                      "mt-1 h-12 w-full justify-start text-left font-normal",
+                      !workoutDate && "text-muted-foreground",
+                    )}
+                  >
+                    <CalendarIcon className="h-5 w-5" />
+                    {workoutDate ? format(workoutDate, "EEE d MMM yyyy") : <span>Pick a date</span>}
+                  </Button>
+                </PopoverTrigger>
+                <PopoverContent className="w-auto p-0" align="start">
+                  <Calendar
+                    mode="single"
+                    selected={workoutDate}
+                    onSelect={setWorkoutDate}
+                    disabled={[{ after: new Date() }]}
+                    defaultMonth={workoutDate}
+                    initialFocus
+                    className={cn("p-3 pointer-events-auto")}
+                  />
+                </PopoverContent>
+              </Popover>
+            </label>
           </div>
 
           {rows.map((row, index) => (
