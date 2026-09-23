@@ -3,6 +3,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useState } from "react";
 import { useServerFn } from "@tanstack/react-start";
 import { AppScreen } from "@/components/AppScreen";
+import { EmptyState, ErrorState, LoadingBlock } from "@/components/ScreenState";
 import { localDateString } from "@/lib/checkins";
 import { approvePlan, discardPlan, recommendPlan } from "@/lib/plans.functions";
 import {
@@ -115,7 +116,17 @@ function PlanPage() {
             Your current plan
           </p>
           {approved.isLoading ? (
-            <p className="mt-2 text-sm text-muted-foreground">Loading your plan…</p>
+            <div className="mt-2">
+              <LoadingBlock lines={3} label="Loading your plan" />
+            </div>
+          ) : approved.isError ? (
+            <div className="mt-2">
+              <ErrorState
+                message="We couldn't load your current plan."
+                onRetry={() => approved.refetch()}
+                retrying={approved.isFetching}
+              />
+            </div>
           ) : approved.data ? (
             draft.data && !showApproved ? (
               <button
@@ -151,7 +162,7 @@ function PlanPage() {
                       <button
                         type="button"
                         onClick={() => setShowApproved(false)}
-                        className="shrink-0 text-sm text-muted-foreground underline underline-offset-4"
+                        className="-mr-2 -mt-2 inline-flex min-h-11 shrink-0 items-center px-2 text-sm text-muted-foreground underline underline-offset-4"
                       >
                         Collapse
                       </button>
@@ -162,11 +173,11 @@ function PlanPage() {
               </div>
             )
           ) : (
-            <div className="mt-2 rounded-2xl border border-dashed border-border p-8 text-center">
-              <p className="font-semibold text-foreground">No plan yet</p>
-              <p className="mt-1 text-sm text-muted-foreground">
-                Get a week of workouts suggested from your history.
-              </p>
+            <div className="mt-2">
+              <EmptyState
+                title="No plan yet"
+                hint="Get a week of workouts suggested from your history."
+              />
             </div>
           )}
         </div>
