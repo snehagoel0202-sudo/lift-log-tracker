@@ -42,6 +42,7 @@ export const recommendPlan = createServerFn({ method: "POST" })
         .eq("user_id", userId)
         .gte("date", shiftDays(data.today, -2))
         .lte("date", data.today)
+        .is("deleted_at", null)
         .order("date", { ascending: false })
         .limit(1)
         .maybeSingle(),
@@ -50,6 +51,7 @@ export const recommendPlan = createServerFn({ method: "POST" })
         .select("exercise_id, session_id, weight, unit, reps, rpe, created_at")
         .eq("user_id", userId)
         .eq("completed", true)
+        .is("deleted_at", null)
         .order("created_at", { ascending: false })
         .limit(400),
     ]);
@@ -113,8 +115,13 @@ export const recommendPlan = createServerFn({ method: "POST" })
       console.error("[plan] narration error", error);
     }
 
-    // Replace any existing draft for this user.
-    await supabase.from("plans").delete().eq("user_id", userId).eq("status", "draft");
+    // Supersede any existing draft for this user (soft delete — rows are never removed).
+    await supabase
+      .from("plans")
+      .update({ deleted_at: new Date().toISOString() })
+      .eq("user_id", userId)
+      .eq("status", "draft")
+      .is("deleted_at", null);
 
     const { data: plan, error: planError } = await supabase
       .from("plans")
@@ -176,7 +183,7 @@ export const discardPlan = createServerFn({ method: "POST" })
     const { supabase, userId } = context;
     const { error } = await supabase
       .from("plans")
-      .delete()
+      .update({ deleted_at: new Date().toISOString() })
       .eq("user_id", userId)
       .eq("id", data.planId)
       .eq("status", "draft");

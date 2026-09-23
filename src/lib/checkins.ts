@@ -30,6 +30,7 @@ export async function fetchTodayCheckin(date: string) {
     .select(COLUMNS)
     .eq("user_id", user.id)
     .eq("date", date)
+    .is("deleted_at", null)
     .maybeSingle();
   if (error) throw error;
   return (data as Checkin | null) ?? null;
@@ -57,7 +58,10 @@ export async function saveCheckin(date: string, input: CheckinInput) {
   if (!user) throw new Error("Not signed in");
   const { error } = await supabase
     .from("checkins")
-    .upsert({ user_id: user.id, date, ...input }, { onConflict: "user_id,date" });
+    .upsert(
+      { user_id: user.id, date, ...input, deleted_at: null },
+      { onConflict: "user_id,date" },
+    );
   if (error) throw error;
 }
 

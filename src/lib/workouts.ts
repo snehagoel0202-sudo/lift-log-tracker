@@ -17,6 +17,7 @@ export function planSessionsQueryOptions(planId: string | null, weekStart: strin
         .eq("user_id", userData.user.id)
         .eq("plan_id", planId)
         .gte("date", weekStart)
+        .is("deleted_at", null)
         .order("date", { ascending: true });
       if (error) throw error;
       return (data ?? []) as PlanSession[];
