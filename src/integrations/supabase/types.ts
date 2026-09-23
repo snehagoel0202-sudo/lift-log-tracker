@@ -18,6 +18,7 @@ export type Database = {
         Row: {
           created_at: string
           date: string
+          deleted_at: string | null
           energy: number | null
           id: string
           notes: string | null
@@ -31,6 +32,7 @@ export type Database = {
         Insert: {
           created_at?: string
           date: string
+          deleted_at?: string | null
           energy?: number | null
           id?: string
           notes?: string | null
@@ -44,6 +46,7 @@ export type Database = {
         Update: {
           created_at?: string
           date?: string
+          deleted_at?: string | null
           energy?: number | null
           id?: string
           notes?: string | null
@@ -99,6 +102,7 @@ export type Database = {
         Row: {
           created_at: string
           day_number: number
+          deleted_at: string | null
           exercise_id: string
           id: string
           plan_id: string
@@ -114,6 +118,7 @@ export type Database = {
         Insert: {
           created_at?: string
           day_number: number
+          deleted_at?: string | null
           exercise_id: string
           id?: string
           plan_id: string
@@ -129,6 +134,7 @@ export type Database = {
         Update: {
           created_at?: string
           day_number?: number
+          deleted_at?: string | null
           exercise_id?: string
           id?: string
           plan_id?: string
@@ -161,6 +167,7 @@ export type Database = {
       plans: {
         Row: {
           created_at: string
+          deleted_at: string | null
           id: string
           status: Database["public"]["Enums"]["plan_status"]
           summary: string | null
@@ -169,6 +176,7 @@ export type Database = {
         }
         Insert: {
           created_at?: string
+          deleted_at?: string | null
           id?: string
           status?: Database["public"]["Enums"]["plan_status"]
           summary?: string | null
@@ -177,6 +185,7 @@ export type Database = {
         }
         Update: {
           created_at?: string
+          deleted_at?: string | null
           id?: string
           status?: Database["public"]["Enums"]["plan_status"]
           summary?: string | null
@@ -231,6 +240,7 @@ export type Database = {
         Row: {
           created_at: string
           date: string
+          deleted_at: string | null
           id: string
           notes: string | null
           plan_id: string | null
@@ -240,6 +250,7 @@ export type Database = {
         Insert: {
           created_at?: string
           date: string
+          deleted_at?: string | null
           id?: string
           notes?: string | null
           plan_id?: string | null
@@ -249,6 +260,7 @@ export type Database = {
         Update: {
           created_at?: string
           date?: string
+          deleted_at?: string | null
           id?: string
           notes?: string | null
           plan_id?: string | null
@@ -261,6 +273,7 @@ export type Database = {
         Row: {
           completed: boolean
           created_at: string
+          deleted_at: string | null
           exercise_id: string
           id: string
           reps: number | null
@@ -274,6 +287,7 @@ export type Database = {
         Insert: {
           completed?: boolean
           created_at?: string
+          deleted_at?: string | null
           exercise_id: string
           id?: string
           reps?: number | null
@@ -287,6 +301,7 @@ export type Database = {
         Update: {
           completed?: boolean
           created_at?: string
+          deleted_at?: string | null
           exercise_id?: string
           id?: string
           reps?: number | null
