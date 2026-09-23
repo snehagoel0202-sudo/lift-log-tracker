@@ -34,14 +34,56 @@ export const reviewWorkoutText = createServerFn({ method: "POST" })
     if (exercisesError) throw exercisesError;
     const defaultUnit = (profile?.weight_unit as "kg" | "lb" | null) ?? "kg";
 
+    const normalize = (value: string) => value.trim().toLowerCase().replace(/[^a-z0-9 ]/g, "").replace(/\s+/g, " ");
     const byName = new Map<string, string>();
     for (const exercise of exercises ?? []) {
-      byName.set(exercise.name.trim().toLowerCase(), exercise.id);
+      byName.set(normalize(exercise.name), exercise.id);
       for (const alias of (exercise.aliases as string[] | null) ?? []) {
-        const keyed = alias.trim().toLowerCase();
+        const keyed = normalize(alias);
         if (keyed && !byName.has(keyed)) byName.set(keyed, exercise.id);
       }
     }
+
+    /** Edit distance, capped: dictation mishears words like "squats" as "spots". */
+    const distance = (a: string, b: string) => {
+      const prev = Array.from({ length: b.length + 1 }, (_, i) => i);
+      for (let i = 1; i <= a.length; i++) {
+        let last = prev[0]!;
+        prev[0] = i;
+        for (let j = 1; j <= b.length; j++) {
+          const current = prev[j]!;
+          prev[j] = Math.min(
+            prev[j]! + 1,
+            prev[j - 1]! + 1,
+            last + (a[i - 1] === b[j - 1] ? 0 : 1),
+          );
+          last = current;
+        }
+      }
+      return prev[b.length]!;
+    };
+
+    /** Exact key first, then the single closest near-miss (never a guess between ties). */
+    const matchExercise = (name: string): string | null => {
+      const key = normalize(name);
+      if (!key) return null;
+      const exact = byName.get(key);
+      if (exact) return exact;
+      const limit = key.length <= 5 ? 1 : key.length <= 9 ? 2 : 3;
+      let best: { id: string; score: number } | null = null;
+      let tied = false;
+      for (const [candidate, id] of byName) {
+        const score = distance(key, candidate);
+        if (score > limit) continue;
+        if (!best || score < best.score) {
+          best = { id, score };
+          tied = false;
+        } else if (score === best.score && id !== best.id) {
+          tied = true;
+        }
+      }
+      return best && !tied ? best.id : null;
+    };
 
     let parsed;
     try {
