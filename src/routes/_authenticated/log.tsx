@@ -1,8 +1,9 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { useState } from "react";
+import { useCallback, useState } from "react";
 import { useServerFn } from "@tanstack/react-start";
 import { AppScreen } from "@/components/AppScreen";
+import { useSpeechRecognition } from "@/hooks/use-speech-recognition";
 import { localDateString } from "@/lib/checkins";
 import { exercisesQueryOptions } from "@/lib/exercises";
 import { reviewWorkoutText, saveLoggedWorkout, type ReviewResult } from "@/lib/log.functions";
@@ -49,6 +50,11 @@ function LogPage() {
   const [rows, setRows] = useState<Row[] | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [savedCount, setSavedCount] = useState<number | null>(null);
+
+  const appendTranscript = useCallback((chunk: string) => {
+    setText((current) => (current.trim() ? `${current.replace(/\s+$/, "")} ${chunk}` : chunk));
+  }, []);
+  const speech = useSpeechRecognition(appendTranscript);
 
   const review = useMutation({
     mutationFn: useServerFn(reviewWorkoutText),
