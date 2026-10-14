@@ -33,7 +33,7 @@ export const recommendPlan = createServerFn({ method: "POST" })
       supabase
         .from("profiles")
         .select(
-          "days_per_week, equipment, weight_unit, postpartum, postpartum_weeks_since_birth, postpartum_weeks_recorded_on, postpartum_birth_type, postpartum_cleared, postpartum_cleared_on",
+          "days_per_week, goal, experience, session_minutes, equipment, weight_unit, postpartum, postpartum_weeks_since_birth, postpartum_weeks_recorded_on, postpartum_birth_type, postpartum_cleared, postpartum_cleared_on",
         )
         .eq("id", userId)
         .maybeSingle(),
@@ -110,6 +110,9 @@ export const recommendPlan = createServerFn({ method: "POST" })
       checkin: checkinRes.data ?? null,
       postpartum,
       weightUnit: profileRes.data?.weight_unit ?? "kg",
+      goal: profileRes.data?.goal ?? null,
+      experience: profileRes.data?.experience ?? null,
+      sessionMinutes: profileRes.data?.session_minutes ?? null,
     });
 
     // "day" scope: only the next training day, for when today feels off but the week is fine.

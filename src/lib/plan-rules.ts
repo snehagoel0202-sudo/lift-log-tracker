@@ -246,8 +246,29 @@ function pickForDay(
   return chosen;
 }
 
-const REP_MIN = 8;
-const REP_MAX = 12;
+export type TrainingGoal = "strength" | "build_muscle" | "lose_fat" | "general_fitness";
+export type ExperienceLevel = "beginner" | "intermediate" | "advanced";
+
+/** Rep range by goal. Strength uses 4-6 on compound lifts only; its accessories use 8-12. */
+export function repRange(goal: TrainingGoal | null, isCompound: boolean): [number, number] {
+  if (goal === "strength") return isCompound ? [4, 6] : [8, 12];
+  if (goal === "lose_fat" || goal === "general_fitness") return [10, 15];
+  return [8, 12];
+}
+
+/** Exercises per day: the smaller of the session-length cap and the experience cap. */
+export function exercisesPerDay(sessionMinutes: number | null, experience: ExperienceLevel | null) {
+  const minutes = sessionMinutes ?? 60;
+  const bySession = minutes >= 75 ? 6 : minutes >= 60 ? 5 : minutes >= 45 ? 4 : 3;
+  const byExperience = experience === "beginner" ? 4 : experience === "advanced" ? 6 : 5;
+  return Math.min(bySession, byExperience);
+}
+
+/** Base sets before readiness/postpartum adjustments. Beginners stay within 2-3. */
+export function baseSets(goal: TrainingGoal | null, experience: ExperienceLevel | null, isCompound: boolean) {
+  if (goal === "strength" && isCompound && experience !== "beginner") return 4;
+  return 3;
+}
 
 function round(value: number) {
   return Math.round(value * 100) / 100;
@@ -270,6 +291,8 @@ function progression(
   history: HistorySet[],
   allowIncrease: boolean,
   unit: "kg" | "lb",
+  REP_MIN: number,
+  REP_MAX: number,
 ): Pick<PlanItemDraft, "target_weight" | "unit" | "reason" | "rationale"> {
   if (history.length === 0) {
     return {
@@ -334,6 +357,9 @@ function progression(
 export function buildPlan(input: {
   today: string;
   daysPerWeek: number | null;
+  goal?: TrainingGoal | null;
+  experience?: ExperienceLevel | null;
+  sessionMinutes?: number | null;
   equipment: "full_gym" | "dumbbells_only" | "bodyweight_only" | null;
   exercises: PlanExercise[];
   historyByExercise: Record<string, HistorySet[]>;
@@ -387,23 +413,29 @@ export function buildPlan(input: {
   }
   if (postpartumOn) notes.push(POSTPARTUM_WARNING_NOTE);
 
-  const perDay = 5;
+  const goal = input.goal ?? null;
+  const experience = input.experience ?? null;
+  const perDay = exercisesPerDay(input.sessionMinutes ?? null, experience);
   const days: PlanDayDraft[] = split.map((day, index) => {
     let picks = pickForDay(day.groups, pool, perDay, index);
-    if (sore && picks.length > 4) picks = picks.slice(0, picks.length - 1);
+    if (sore && picks.length > 1) picks = picks.slice(0, picks.length - 1);
 
     const items: PlanItemDraft[] = picks.map((exercise) => {
       const history = input.historyByExercise[exercise.id] ?? [];
-      const progress = progression(exercise, history, allowIncrease, weightUnit);
-      let sets = Math.max(1, lowReadiness ? 2 : 3);
+      const [repMin, repMax] = repRange(goal, exercise.is_compound);
+      const progress = progression(exercise, history, allowIncrease, weightUnit, repMin, repMax);
+      let sets = baseSets(goal, experience, exercise.is_compound);
+      if (lowReadiness) sets -= 1;
+      if (experience === "beginner") sets = Math.min(3, Math.max(2, sets));
+      sets = Math.max(1, sets);
       if (earlyPostpartum) sets = Math.min(sets, 2);
       return {
         exercise_id: exercise.id,
         exercise_name: exercise.name,
         muscle_group: exercise.muscle_group,
         sets,
-        rep_min: REP_MIN,
-        rep_max: REP_MAX,
+        rep_min: repMin,
+        rep_max: repMax,
         ...progress,
       };
     });
