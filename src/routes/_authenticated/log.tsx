@@ -6,6 +6,8 @@ import { CalendarIcon } from "lucide-react";
 import { useServerFn } from "@tanstack/react-start";
 import { AppScreen } from "@/components/AppScreen";
 import { Button } from "@/components/ui/button";
+import { useWorkoutFeedbackPrompt } from "@/components/FeedbackDialog";
+import { track } from "@/lib/analytics";
 import { Calendar } from "@/components/ui/calendar";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { cn } from "@/lib/utils";
@@ -65,6 +67,8 @@ function LogPage() {
   const [savedCount, setSavedCount] = useState<number | null>(null);
   const [correction, setCorrection] = useState("");
   const [workoutDate, setWorkoutDate] = useState<Date | undefined>(undefined);
+  const [correctionCount, setCorrectionCount] = useState(0);
+  const feedbackPrompt = useWorkoutFeedbackPrompt();
 
   // Set after mount so server and browser always render the same first paint.
   useEffect(() => {
@@ -112,6 +116,8 @@ function LogPage() {
         return;
       }
       setRows(toRows(result));
+      setCorrectionCount(0);
+      void track("log_reviewed", { sets: result.rows.length });
     },
     onError: () => setError("Something went wrong reading that. Please try again."),
   });
@@ -130,6 +136,8 @@ function LogPage() {
       }
       setRows(toRows(result));
       setCorrection("");
+      setCorrectionCount((n) => n + 1);
+      void track("log_corrected");
     },
     onError: () => setError("Something went wrong applying that change. Please try again."),
   });
@@ -138,6 +146,8 @@ function LogPage() {
     mutationFn: useServerFn(saveLoggedWorkout),
     onSuccess: async (result: { saved: number }) => {
       setSavedCount(result.saved);
+      void track("log_saved", { sets: result.saved, corrections: correctionCount });
+      void feedbackPrompt.check();
       setRows(null);
       setText("");
       setCorrection("");
@@ -500,6 +510,7 @@ function LogPage() {
           </div>
         </div>
       )}
+      {feedbackPrompt.dialog}
     </AppScreen>
   );
 }
