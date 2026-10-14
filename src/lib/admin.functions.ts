@@ -3,7 +3,7 @@ import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import { weeklyStats } from "@/lib/admin-stats";
 
 function isAdminEmail(email: unknown) {
-  const admin = process.env.ADMIN_EMAIL?.trim().toLowerCase();
+  const admin = process.env["ADMIN_EMAIL"]?.trim().toLowerCase();
   return Boolean(admin && typeof email === "string" && email.trim().toLowerCase() === admin);
 }
 
