@@ -9,6 +9,8 @@ import { localDateString } from "@/lib/checkins";
 import { DeleteAccountDialog } from "@/components/DeleteAccountDialog";
 import { FeedbackDialog } from "@/components/FeedbackDialog";
 import { track } from "@/lib/analytics";
+import { useServerFn } from "@tanstack/react-start";
+import { amIAdmin } from "@/lib/admin.functions";
 import { LoadingBlock } from "@/components/ScreenState";
 import {
   PostpartumFields,
@@ -72,6 +74,8 @@ function ProfilePage() {
   const queryClient = useQueryClient();
   const [editing, setEditing] = useState(false);
   const [feedbackOpen, setFeedbackOpen] = useState(false);
+  const checkAdmin = useServerFn(amIAdmin);
+  const { data: adminCheck } = useQuery({ queryKey: ["am-i-admin"], queryFn: () => checkAdmin() });
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [draft, setDraft] = useState<Draft | null>(null);
