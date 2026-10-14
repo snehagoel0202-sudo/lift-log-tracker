@@ -14,6 +14,21 @@ export type Database = {
   }
   public: {
     Tables: {
+      account_deletions_daily: {
+        Row: {
+          day: string
+          deletions: number
+        }
+        Insert: {
+          day: string
+          deletions?: number
+        }
+        Update: {
+          day?: string
+          deletions?: number
+        }
+        Relationships: []
+      }
       checkins: {
         Row: {
           created_at: string
@@ -387,7 +402,10 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      delete_account_permanently: {
+        Args: { _user_id: string }
+        Returns: undefined
+      }
     }
     Enums: {
       birth_type: "vaginal" | "c_section" | "prefer_not_to_say"
