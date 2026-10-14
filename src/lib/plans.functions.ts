@@ -3,6 +3,8 @@ import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import {
   buildPlan,
+  postpartumStatus,
+  type PostpartumInfo,
   type HistorySet,
   type PlanExercise,
 } from "./plan-rules";
@@ -30,12 +32,16 @@ export const recommendPlan = createServerFn({ method: "POST" })
     const [profileRes, exercisesRes, checkinRes, setsRes] = await Promise.all([
       supabase
         .from("profiles")
-        .select("days_per_week, equipment, weight_unit")
+        .select(
+          "days_per_week, equipment, weight_unit, postpartum, postpartum_weeks_since_birth, postpartum_weeks_recorded_on, postpartum_birth_type, postpartum_cleared, postpartum_cleared_on",
+        )
         .eq("id", userId)
         .maybeSingle(),
       supabase
         .from("exercises")
-        .select("id, name, muscle_group, equipment, is_compound, weight_step"),
+        .select(
+          "id, name, muscle_group, equipment, is_compound, weight_step, impact_level, postpartum_safe",
+        ),
       supabase
         .from("checkins")
         .select("date, sleep, energy, soreness, pain, pain_area")
@@ -59,6 +65,21 @@ export const recommendPlan = createServerFn({ method: "POST" })
     if (profileRes.error) throw profileRes.error;
     if (exercisesRes.error) throw exercisesRes.error;
     if (setsRes.error) throw setsRes.error;
+
+    const p = profileRes.data;
+    const postpartum: PostpartumInfo | null = p
+      ? {
+          postpartum: p.postpartum,
+          weeks_since_birth: p.postpartum_weeks_since_birth,
+          weeks_recorded_on: p.postpartum_weeks_recorded_on,
+          birth_type: p.postpartum_birth_type,
+          cleared: p.postpartum_cleared,
+          cleared_on: p.postpartum_cleared_on,
+        }
+      : null;
+    if (postpartumStatus(postpartum, data.today).mode === "blocked") {
+      return { planId: null as string | null, blocked: true };
+    }
 
     const exercises: PlanExercise[] = (exercisesRes.data ?? []).map((row) => ({
       ...row,
@@ -87,6 +108,7 @@ export const recommendPlan = createServerFn({ method: "POST" })
       exercises,
       historyByExercise,
       checkin: checkinRes.data ?? null,
+      postpartum,
     });
 
     // "day" scope: only the next training day, for when today feels off but the week is fine.
@@ -149,7 +171,7 @@ export const recommendPlan = createServerFn({ method: "POST" })
     const { error: itemsError } = await supabase.from("plan_items").insert(rows);
     if (itemsError) throw itemsError;
 
-    return { planId: plan.id as string };
+    return { planId: plan.id as string | null, blocked: false };
   });
 
 const PlanIdInput = z.object({ planId: z.string().uuid() });
