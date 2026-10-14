@@ -222,6 +222,7 @@ export type Database = {
       }
       profiles: {
         Row: {
+          accepted_terms_at: string | null
           created_at: string
           days_per_week: number | null
           display_name: string | null
@@ -243,6 +244,7 @@ export type Database = {
           weight_unit: Database["public"]["Enums"]["weight_unit"]
         }
         Insert: {
+          accepted_terms_at?: string | null
           created_at?: string
           days_per_week?: number | null
           display_name?: string | null
@@ -264,6 +266,7 @@ export type Database = {
           weight_unit?: Database["public"]["Enums"]["weight_unit"]
         }
         Update: {
+          accepted_terms_at?: string | null
           created_at?: string
           days_per_week?: number | null
           display_name?: string | null
