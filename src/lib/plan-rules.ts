@@ -11,8 +11,58 @@ export type PlanExercise = {
   is_compound: boolean;
   weight_step: number;
   impact_level?: "low" | "moderate" | "high";
+  movement_pattern?: "squat" | "hinge" | "push" | "pull" | "lunge" | "carry" | "core";
   postpartum_safe?: boolean;
 };
+
+export const PAIN_AREAS = [
+  "Knee",
+  "Hip",
+  "Lower back",
+  "Shoulder",
+  "Wrist",
+  "Neck",
+  "Pelvic floor",
+  "C-section scar",
+  "Other",
+] as const;
+export type PainArea = (typeof PAIN_AREAS)[number];
+
+/** Pain areas are saved as a comma-separated list of chip labels. Unknown text is ignored. */
+export function parsePainAreas(value: string | null | undefined): PainArea[] {
+  if (!value) return [];
+  return value
+    .split(",")
+    .map((part) => part.trim().toLowerCase())
+    .map((part) => PAIN_AREAS.find((area) => area.toLowerCase() === part))
+    .filter((area): area is PainArea => area != null);
+}
+
+type Pattern = NonNullable<PlanExercise["movement_pattern"]>;
+type AreaRule = { patterns?: Pattern[]; groups?: string[]; nonLowImpact?: boolean };
+
+/** Which exercises load each painful area. "Other" removes nothing specific. */
+export const PAIN_AREA_RULES: Record<PainArea, AreaRule> = {
+  Knee: { patterns: ["squat", "lunge"] },
+  Hip: { patterns: ["squat", "hinge", "lunge"] },
+  "Lower back": { patterns: ["hinge", "carry"] },
+  Shoulder: { patterns: ["push", "pull"], groups: ["Shoulders"] },
+  Wrist: { patterns: ["push", "carry"] },
+  Neck: { patterns: ["carry"], groups: ["Shoulders"] },
+  "Pelvic floor": { patterns: ["core"], nonLowImpact: true },
+  "C-section scar": { patterns: ["core"], nonLowImpact: true },
+  Other: {},
+};
+
+export function loadsPainArea(exercise: PlanExercise, areas: PainArea[]) {
+  return areas.some((area) => {
+    const rule = PAIN_AREA_RULES[area];
+    if (exercise.movement_pattern && rule.patterns?.includes(exercise.movement_pattern)) return true;
+    if (rule.groups?.includes(exercise.muscle_group)) return true;
+    if (rule.nonLowImpact && exercise.impact_level !== "low") return true;
+    return false;
+  });
+}
 
 export type BirthType = "vaginal" | "c_section" | "prefer_not_to_say";
 
@@ -278,6 +328,7 @@ export function buildPlan(input: {
   }
   const postpartumOn = pp.mode === "active";
   const earlyPostpartum = pp.mode === "active" && pp.earlyPhase;
+  const painAreas = input.checkin?.pain ? parsePainAreas(input.checkin.pain_area) : [];
   const allowed = allowedEquipment(input.equipment);
   const pool = input.exercises
     .filter((exercise) => allowed.includes(exercise.equipment))
@@ -285,6 +336,7 @@ export function buildPlan(input: {
       (exercise) =>
         !postpartumOn || (exercise.postpartum_safe === true && exercise.impact_level === "low"),
     )
+    .filter((exercise) => !loadsPainArea(exercise, painAreas))
     .sort((a, b) => Number(b.is_compound) - Number(a.is_compound) || a.name.localeCompare(b.name));
 
   const split = splitForDays(input.daysPerWeek ?? 3);
@@ -300,9 +352,13 @@ export function buildPlan(input: {
 
   if (lowReadiness) notes.push("Sleep or energy is low, so this week starts with one set less per exercise and no weight increases.");
   if (sore) notes.push("You're sore, so each day is one exercise shorter.");
+  const removing = painAreas.filter((a) => a !== "Other");
+  if (pain && removing.length > 0) {
+    notes.push(`Exercises that load your ${removing.join(", ").toLowerCase()} are left out this week.`);
+  }
   if (pain) {
     notes.push(
-      `Rest the ${checkin?.pain_area?.trim() || "painful area"} and keep weights where they are. Take it easy today. If the pain is sharp or doesn't go away, check with a professional.`,
+      `Rest the ${checkin?.pain_area?.trim().toLowerCase() || "painful area"} and keep weights where they are. Take it easy today. If the pain is sharp or doesn't go away, check with a professional.`,
     );
   }
 

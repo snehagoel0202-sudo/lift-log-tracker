@@ -1,3 +1,4 @@
+import { PAIN_AREAS, parsePainAreas } from "@/lib/plan-rules";
 import { useEffect, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import {
@@ -165,14 +166,33 @@ export function CheckinCard() {
 
       {pain ? (
         <div className="space-y-3">
-          <input
-            type="text"
-            value={painArea}
-            onChange={(event) => setPainArea(event.target.value)}
-            placeholder="Where? (optional)"
-            aria-label="Pain area"
-            className="min-h-14 w-full rounded-xl border border-border bg-background px-4 text-base text-foreground placeholder:text-muted-foreground focus:border-primary focus:outline-none"
-          />
+          <p className="text-sm text-muted-foreground">Where? Tap all that apply (optional).</p>
+          <div className="flex flex-wrap gap-2" role="group" aria-label="Pain area">
+            {PAIN_AREAS.map((area) => {
+              const selected = parsePainAreas(painArea).includes(area);
+              return (
+                <button
+                  key={area}
+                  type="button"
+                  aria-pressed={selected}
+                  onClick={() => {
+                    const current = parsePainAreas(painArea);
+                    const next = selected
+                      ? current.filter((a) => a !== area)
+                      : [...current, area];
+                    setPainArea(next.join(", "));
+                  }}
+                  className={`min-h-12 rounded-full border px-4 text-sm font-semibold transition-colors ${
+                    selected
+                      ? "border-primary bg-primary/10 text-foreground"
+                      : "border-border bg-background text-foreground hover:border-primary/50"
+                  }`}
+                >
+                  {area}
+                </button>
+              );
+            })}
+          </div>
           <p className="rounded-xl bg-primary/10 p-3 text-sm text-foreground">{PAIN_NOTE}</p>
         </div>
       ) : null}
