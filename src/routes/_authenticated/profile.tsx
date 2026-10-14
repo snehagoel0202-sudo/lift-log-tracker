@@ -4,6 +4,8 @@ import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { AppScreen } from "@/components/AppScreen";
 import { ChoiceList } from "@/components/ChoiceList";
+import { currentWeeksSinceBirth } from "@/lib/plan-rules";
+import { localDateString } from "@/lib/checkins";
 import { LoadingBlock } from "@/components/ScreenState";
 import {
   PostpartumFields,
@@ -19,6 +21,7 @@ import {
   SESSION_MINUTES,
   BIRTH_TYPES,
   labelFor,
+  postpartumInfoFrom,
   profileQueryOptions,
   type Equipment,
   type Experience,
@@ -259,7 +262,7 @@ function ProfilePage() {
                       value={
                         profile.postpartum_weeks_since_birth == null
                           ? "Not set"
-                          : `${profile.postpartum_weeks_since_birth} (when entered)`
+                          : `${currentWeeksSinceBirth(postpartumInfoFrom(profile)!, localDateString())} weeks`
                       }
                     />
                     <Row label="Birth type" value={labelFor(BIRTH_TYPES, profile.postpartum_birth_type)} />
