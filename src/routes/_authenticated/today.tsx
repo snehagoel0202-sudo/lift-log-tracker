@@ -4,6 +4,7 @@ import { useEffect, useMemo, useState } from "react";
 import { useServerFn } from "@tanstack/react-start";
 import { AppScreen } from "@/components/AppScreen";
 import { CheckinCard } from "@/components/CheckinCard";
+import { useWorkoutFeedbackPrompt } from "@/components/FeedbackDialog";
 import { DemoVideo } from "@/components/DemoVideo";
 
 import { EmptyState, ErrorState, LoadingBlock } from "@/components/ScreenState";
@@ -64,6 +65,7 @@ function Today() {
   const [rows, setRows] = useState<Record<string, SetRow[]>>({});
   const [reviewing, setReviewing] = useState(false);
   const [savedCount, setSavedCount] = useState<number | null>(null);
+  const feedbackPrompt = useWorkoutFeedbackPrompt();
 
   const dayNumber = selectedDay ?? suggestedDay;
   const items = useMemo(
@@ -81,6 +83,7 @@ function Today() {
     mutationFn: useServerFn(saveWorkout),
     onSuccess: async (result: { saved: number }) => {
       setSavedCount(result.saved);
+      void feedbackPrompt.check();
       setReviewing(false);
       setRows(Object.fromEntries(items.map((item) => [item.id, rowsForItem(item)])));
       await queryClient.invalidateQueries({ queryKey: ["plan-sessions"] });
@@ -358,6 +361,7 @@ function Today() {
       >
         Finish workout ({checked.length} {checked.length === 1 ? "set" : "sets"})
       </button>
+      {feedbackPrompt.dialog}
     </AppScreen>
   );
 }
