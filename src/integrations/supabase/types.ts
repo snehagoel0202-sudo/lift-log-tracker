@@ -74,6 +74,30 @@ export type Database = {
         }
         Relationships: []
       }
+      events: {
+        Row: {
+          created_at: string
+          id: string
+          name: string
+          props: Json | null
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          name: string
+          props?: Json | null
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          name?: string
+          props?: Json | null
+          user_id?: string
+        }
+        Relationships: []
+      }
       exercises: {
         Row: {
           aliases: string[]
