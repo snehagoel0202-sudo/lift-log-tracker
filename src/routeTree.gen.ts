@@ -12,6 +12,7 @@ import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as AuthenticatedRouteRouteImport } from './routes/_authenticated/route'
 import { Route as AuthRouteImport } from './routes/auth'
+import { Route as PrivacyRouteImport } from './routes/privacy'
 import { Route as AuthenticatedLibraryRouteImport } from './routes/_authenticated/library'
 import { Route as AuthenticatedLogRouteImport } from './routes/_authenticated/log'
 import { Route as AuthenticatedOnboardingRouteImport } from './routes/_authenticated/onboarding'
@@ -19,6 +20,7 @@ import { Route as AuthenticatedPlanRouteImport } from './routes/_authenticated/p
 import { Route as AuthenticatedPlanHistoryRouteImport } from './routes/_authenticated/plan-history'
 import { Route as AuthenticatedProfileRouteImport } from './routes/_authenticated/profile'
 import { Route as AuthenticatedProgressRouteImport } from './routes/_authenticated/progress'
+import { Route as AuthenticatedTermsRouteImport } from './routes/_authenticated/terms'
 import { Route as AuthenticatedTodayRouteImport } from './routes/_authenticated/today'
 
 const IndexRoute = IndexRouteImport.update({
@@ -33,6 +35,11 @@ const AuthenticatedRouteRoute = AuthenticatedRouteRouteImport.update({
 const AuthRoute = AuthRouteImport.update({
   id: '/auth',
   path: '/auth',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const PrivacyRoute = PrivacyRouteImport.update({
+  id: '/privacy',
+  path: '/privacy',
   getParentRoute: () => rootRouteImport,
 } as any)
 const AuthenticatedLibraryRoute = AuthenticatedLibraryRouteImport.update({
@@ -71,6 +78,11 @@ const AuthenticatedProgressRoute = AuthenticatedProgressRouteImport.update({
   path: '/progress',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
+const AuthenticatedTermsRoute = AuthenticatedTermsRouteImport.update({
+  id: '/terms',
+  path: '/terms',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
 const AuthenticatedTodayRoute = AuthenticatedTodayRouteImport.update({
   id: '/today',
   path: '/today',
@@ -80,6 +92,7 @@ const AuthenticatedTodayRoute = AuthenticatedTodayRouteImport.update({
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/auth': typeof AuthRoute
+  '/privacy': typeof PrivacyRoute
   '/library': typeof AuthenticatedLibraryRoute
   '/log': typeof AuthenticatedLogRoute
   '/onboarding': typeof AuthenticatedOnboardingRoute
@@ -87,11 +100,13 @@ export interface FileRoutesByFullPath {
   '/plan-history': typeof AuthenticatedPlanHistoryRoute
   '/profile': typeof AuthenticatedProfileRoute
   '/progress': typeof AuthenticatedProgressRoute
+  '/terms': typeof AuthenticatedTermsRoute
   '/today': typeof AuthenticatedTodayRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/auth': typeof AuthRoute
+  '/privacy': typeof PrivacyRoute
   '/library': typeof AuthenticatedLibraryRoute
   '/log': typeof AuthenticatedLogRoute
   '/onboarding': typeof AuthenticatedOnboardingRoute
@@ -99,6 +114,7 @@ export interface FileRoutesByTo {
   '/plan-history': typeof AuthenticatedPlanHistoryRoute
   '/profile': typeof AuthenticatedProfileRoute
   '/progress': typeof AuthenticatedProgressRoute
+  '/terms': typeof AuthenticatedTermsRoute
   '/today': typeof AuthenticatedTodayRoute
 }
 export interface FileRoutesById {
@@ -106,6 +122,7 @@ export interface FileRoutesById {
   '/': typeof IndexRoute
   '/_authenticated': typeof AuthenticatedRouteRouteWithChildren
   '/auth': typeof AuthRoute
+  '/privacy': typeof PrivacyRoute
   '/_authenticated/library': typeof AuthenticatedLibraryRoute
   '/_authenticated/log': typeof AuthenticatedLogRoute
   '/_authenticated/onboarding': typeof AuthenticatedOnboardingRoute
@@ -113,6 +130,7 @@ export interface FileRoutesById {
   '/_authenticated/plan-history': typeof AuthenticatedPlanHistoryRoute
   '/_authenticated/profile': typeof AuthenticatedProfileRoute
   '/_authenticated/progress': typeof AuthenticatedProgressRoute
+  '/_authenticated/terms': typeof AuthenticatedTermsRoute
   '/_authenticated/today': typeof AuthenticatedTodayRoute
 }
 export interface FileRouteTypes {
@@ -120,6 +138,7 @@ export interface FileRouteTypes {
   fullPaths:
     | '/'
     | '/auth'
+    | '/privacy'
     | '/library'
     | '/log'
     | '/onboarding'
@@ -127,11 +146,13 @@ export interface FileRouteTypes {
     | '/plan-history'
     | '/profile'
     | '/progress'
+    | '/terms'
     | '/today'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
     | '/auth'
+    | '/privacy'
     | '/library'
     | '/log'
     | '/onboarding'
@@ -139,12 +160,14 @@ export interface FileRouteTypes {
     | '/plan-history'
     | '/profile'
     | '/progress'
+    | '/terms'
     | '/today'
   id:
     | '__root__'
     | '/'
     | '/_authenticated'
     | '/auth'
+    | '/privacy'
     | '/_authenticated/library'
     | '/_authenticated/log'
     | '/_authenticated/onboarding'
@@ -152,6 +175,7 @@ export interface FileRouteTypes {
     | '/_authenticated/plan-history'
     | '/_authenticated/profile'
     | '/_authenticated/progress'
+    | '/_authenticated/terms'
     | '/_authenticated/today'
   fileRoutesById: FileRoutesById
 }
@@ -159,6 +183,7 @@ export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   AuthenticatedRouteRoute: typeof AuthenticatedRouteRouteWithChildren
   AuthRoute: typeof AuthRoute
+  PrivacyRoute: typeof PrivacyRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -182,6 +207,13 @@ declare module '@tanstack/react-router' {
       path: '/auth'
       fullPath: '/auth'
       preLoaderRoute: typeof AuthRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/privacy': {
+      id: '/privacy'
+      path: '/privacy'
+      fullPath: '/privacy'
+      preLoaderRoute: typeof PrivacyRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/_authenticated/library': {
@@ -233,6 +265,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedProgressRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/_authenticated/terms': {
+      id: '/_authenticated/terms'
+      path: '/terms'
+      fullPath: '/terms'
+      preLoaderRoute: typeof AuthenticatedTermsRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
     '/_authenticated/today': {
       id: '/_authenticated/today'
       path: '/today'
@@ -251,6 +290,7 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedPlanHistoryRoute: typeof AuthenticatedPlanHistoryRoute
   AuthenticatedProfileRoute: typeof AuthenticatedProfileRoute
   AuthenticatedProgressRoute: typeof AuthenticatedProgressRoute
+  AuthenticatedTermsRoute: typeof AuthenticatedTermsRoute
   AuthenticatedTodayRoute: typeof AuthenticatedTodayRoute
 }
 
@@ -262,6 +302,7 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedPlanHistoryRoute: AuthenticatedPlanHistoryRoute,
   AuthenticatedProfileRoute: AuthenticatedProfileRoute,
   AuthenticatedProgressRoute: AuthenticatedProgressRoute,
+  AuthenticatedTermsRoute: AuthenticatedTermsRoute,
   AuthenticatedTodayRoute: AuthenticatedTodayRoute,
 }
 
@@ -272,6 +313,7 @@ const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   AuthenticatedRouteRoute: AuthenticatedRouteRouteWithChildren,
   AuthRoute: AuthRoute,
+  PrivacyRoute: PrivacyRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
