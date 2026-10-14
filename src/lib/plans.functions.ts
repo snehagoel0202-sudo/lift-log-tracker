@@ -40,7 +40,7 @@ export const recommendPlan = createServerFn({ method: "POST" })
       supabase
         .from("exercises")
         .select(
-          "id, name, muscle_group, equipment, is_compound, weight_step, impact_level, postpartum_safe",
+          "id, name, muscle_group, equipment, is_compound, weight_step, impact_level, postpartum_safe, movement_pattern",
         ),
       supabase
         .from("checkins")
