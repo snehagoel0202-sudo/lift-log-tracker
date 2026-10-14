@@ -57,6 +57,9 @@ function Welcome() {
       >
         Get started
       </Link>
+      <Link to="/privacy" className="mt-4 text-sm text-muted-foreground underline">
+        Privacy
+      </Link>
     </div>
   );
 }

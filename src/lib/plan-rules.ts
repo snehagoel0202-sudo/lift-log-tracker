@@ -253,24 +253,42 @@ function round(value: number) {
   return Math.round(value * 100) / 100;
 }
 
+export const KG_PER_LB = 0.4536;
+
+export function convertWeight(weight: number, from: "kg" | "lb", to: "kg" | "lb") {
+  if (from === to) return weight;
+  return from === "lb" ? weight * KG_PER_LB : weight / KG_PER_LB;
+}
+
+export function roundToStep(value: number, step: number) {
+  if (!(step > 0)) return round(value);
+  return round(Math.round(value / step) * step);
+}
+
 function progression(
   exercise: PlanExercise,
   history: HistorySet[],
   allowIncrease: boolean,
+  unit: "kg" | "lb",
 ): Pick<PlanItemDraft, "target_weight" | "unit" | "reason" | "rationale"> {
   if (history.length === 0) {
     return {
       target_weight: null,
-      unit: "kg",
+      unit,
       reason: "no_history",
       rationale: "Pick a weight you could lift 2-3 more times.",
     };
   }
 
-  const unit = history[0]!.unit;
-  const weights = history.map((set) => set.weight).filter((w): w is number => w != null);
-  const baseWeight = weights.length > 0 ? Math.max(...weights) : null;
-  const weightLabel = baseWeight != null ? `${round(baseWeight)} ${unit}` : "the same weight";
+  // Compare everything in the profile unit; say so when a conversion happened.
+  const converted = history.some((set) => set.weight != null && set.unit !== unit);
+  const weights = history
+    .filter((set) => set.weight != null)
+    .map((set) => convertWeight(set.weight!, set.unit, unit));
+  const baseWeight =
+    weights.length > 0 ? roundToStep(Math.max(...weights), exercise.weight_step) : null;
+  const weightLabel = baseWeight != null ? `${baseWeight} ${unit}` : "the same weight";
+  const note = converted ? ` (converted from your logged ${unit === "kg" ? "lb" : "kg"})` : "";
 
   const rpes = history.map((set) => set.rpe).filter((r): r is number => r != null);
   const avgRpe = rpes.length > 0 ? rpes.reduce((a, b) => a + b, 0) / rpes.length : null;
@@ -280,19 +298,19 @@ function progression(
 
   if (allHitTop && (avgRpe == null || avgRpe <= 8) && !hardRpe) {
     if (allowIncrease && baseWeight != null && exercise.weight_step > 0) {
-      const next = round(baseWeight + exercise.weight_step);
+      const next = roundToStep(baseWeight + exercise.weight_step, exercise.weight_step);
       return {
         target_weight: next,
         unit,
         reason: "increase",
-        rationale: `You hit the top of the range last time — go up to ${next} ${unit}.`,
+        rationale: `You hit the top of the range last time — go up to ${next} ${unit}${note}.`,
       };
     }
     return {
       target_weight: baseWeight,
       unit,
       reason: "hold_capped",
-      rationale: `Ready to go heavier, but hold ${weightLabel} today.`,
+      rationale: `Ready to go heavier, but hold ${weightLabel}${note} today.`,
     };
   }
 
@@ -301,7 +319,7 @@ function progression(
       target_weight: baseWeight,
       unit,
       reason: "hold",
-      rationale: `Stay at ${weightLabel} until the reps come easier.`,
+      rationale: `Stay at ${weightLabel}${note} until the reps come easier.`,
     };
   }
 
@@ -309,7 +327,7 @@ function progression(
     target_weight: baseWeight,
     unit,
     reason: "one_more_rep",
-    rationale: `Same ${weightLabel} — aim for one more rep than last time.`,
+    rationale: `Same ${weightLabel}${note} — aim for one more rep than last time.`,
   };
 }
 
@@ -321,7 +339,9 @@ export function buildPlan(input: {
   historyByExercise: Record<string, HistorySet[]>;
   checkin: CheckinSnapshot | null;
   postpartum?: PostpartumInfo | null;
+  weightUnit?: "kg" | "lb";
 }): PlanDraft {
+  const weightUnit = input.weightUnit ?? "kg";
   const pp = postpartumStatus(input.postpartum ?? null, input.today);
   if (pp.mode === "blocked") {
     throw new Error("Postpartum: no strength plan until cleared");
@@ -374,7 +394,7 @@ export function buildPlan(input: {
 
     const items: PlanItemDraft[] = picks.map((exercise) => {
       const history = input.historyByExercise[exercise.id] ?? [];
-      const progress = progression(exercise, history, allowIncrease);
+      const progress = progression(exercise, history, allowIncrease, weightUnit);
       let sets = Math.max(1, lowReadiness ? 2 : 3);
       if (earlyPostpartum) sets = Math.min(sets, 2);
       return {
