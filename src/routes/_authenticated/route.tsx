@@ -15,9 +15,16 @@ export const Route = createFileRoute("/_authenticated")({
 
     const { data: profile } = await supabase
       .from("profiles")
-      .select("onboarded_at")
+      .select("onboarded_at, accepted_terms_at")
       .eq("id", data.user.id)
       .maybeSingle();
+
+    const needsTerms = !profile?.accepted_terms_at;
+    if (needsTerms) {
+      if (location.pathname !== "/terms") throw redirect({ to: "/terms" });
+      return { user: data.user };
+    }
+    if (location.pathname === "/terms") throw redirect({ to: "/today" });
 
     const needsOnboarding = !profile?.onboarded_at;
     if (needsOnboarding && location.pathname !== "/onboarding") {
@@ -37,7 +44,7 @@ function AuthenticatedLayout() {
   return (
     <>
       <Outlet />
-      {pathname === "/onboarding" ? null : <BottomNav />}
+      {pathname === "/onboarding" || pathname === "/terms" ? null : <BottomNav />}
     </>
   );
 }

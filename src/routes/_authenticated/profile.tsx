@@ -1,4 +1,4 @@
-import { createFileRoute, useNavigate } from "@tanstack/react-router";
+import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
@@ -296,6 +296,9 @@ function ProfilePage() {
         <p className="pt-1 text-center text-xs text-muted-foreground">
           LiftLog gives general fitness guidance, not medical advice.
         </p>
+        <Link to="/privacy" className="block text-center text-sm text-muted-foreground underline">
+          Privacy
+        </Link>
       </div>
     </AppScreen>
   );
