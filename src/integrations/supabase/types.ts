@@ -230,6 +230,14 @@ export type Database = {
           goal: Database["public"]["Enums"]["training_goal"] | null
           id: string
           onboarded_at: string | null
+          postpartum: boolean
+          postpartum_birth_type:
+            | Database["public"]["Enums"]["birth_type"]
+            | null
+          postpartum_cleared: boolean | null
+          postpartum_cleared_on: string | null
+          postpartum_weeks_recorded_on: string | null
+          postpartum_weeks_since_birth: number | null
           session_minutes: number | null
           updated_at: string
           weight_unit: Database["public"]["Enums"]["weight_unit"]
@@ -243,6 +251,14 @@ export type Database = {
           goal?: Database["public"]["Enums"]["training_goal"] | null
           id: string
           onboarded_at?: string | null
+          postpartum?: boolean
+          postpartum_birth_type?:
+            | Database["public"]["Enums"]["birth_type"]
+            | null
+          postpartum_cleared?: boolean | null
+          postpartum_cleared_on?: string | null
+          postpartum_weeks_recorded_on?: string | null
+          postpartum_weeks_since_birth?: number | null
           session_minutes?: number | null
           updated_at?: string
           weight_unit?: Database["public"]["Enums"]["weight_unit"]
@@ -256,6 +272,14 @@ export type Database = {
           goal?: Database["public"]["Enums"]["training_goal"] | null
           id?: string
           onboarded_at?: string | null
+          postpartum?: boolean
+          postpartum_birth_type?:
+            | Database["public"]["Enums"]["birth_type"]
+            | null
+          postpartum_cleared?: boolean | null
+          postpartum_cleared_on?: string | null
+          postpartum_weeks_recorded_on?: string | null
+          postpartum_weeks_since_birth?: number | null
           session_minutes?: number | null
           updated_at?: string
           weight_unit?: Database["public"]["Enums"]["weight_unit"]
@@ -363,6 +387,7 @@ export type Database = {
       [_ in never]: never
     }
     Enums: {
+      birth_type: "vaginal" | "c_section" | "prefer_not_to_say"
       equipment_access: "full_gym" | "dumbbells_only" | "bodyweight_only"
       exercise_equipment:
         | "barbell"
@@ -515,6 +540,7 @@ export type CompositeTypes<
 export const Constants = {
   public: {
     Enums: {
+      birth_type: ["vaginal", "c_section", "prefer_not_to_say"],
       equipment_access: ["full_gym", "dumbbells_only", "bodyweight_only"],
       exercise_equipment: [
         "barbell",
