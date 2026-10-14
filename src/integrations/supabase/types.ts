@@ -74,6 +74,30 @@ export type Database = {
         }
         Relationships: []
       }
+      events: {
+        Row: {
+          created_at: string
+          id: string
+          name: string
+          props: Json | null
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          name: string
+          props?: Json | null
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          name?: string
+          props?: Json | null
+          user_id?: string
+        }
+        Relationships: []
+      }
       exercises: {
         Row: {
           aliases: string[]
@@ -138,6 +162,33 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      feedback: {
+        Row: {
+          created_at: string
+          id: string
+          message: string | null
+          rating: number
+          source: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          message?: string | null
+          rating: number
+          source?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          message?: string | null
+          rating?: number
+          source?: string
+          user_id?: string
+        }
+        Relationships: []
       }
       plan_items: {
         Row: {
@@ -304,6 +355,24 @@ export type Database = {
         }
         Relationships: []
       }
+      user_roles: {
+        Row: {
+          id: string
+          role: Database["public"]["Enums"]["app_role"]
+          user_id: string
+        }
+        Insert: {
+          id?: string
+          role: Database["public"]["Enums"]["app_role"]
+          user_id: string
+        }
+        Update: {
+          id?: string
+          role?: Database["public"]["Enums"]["app_role"]
+          user_id?: string
+        }
+        Relationships: []
+      }
       workout_sessions: {
         Row: {
           created_at: string
@@ -406,8 +475,16 @@ export type Database = {
         Args: { _user_id: string }
         Returns: undefined
       }
+      has_role: {
+        Args: {
+          _role: Database["public"]["Enums"]["app_role"]
+          _user_id: string
+        }
+        Returns: boolean
+      }
     }
     Enums: {
+      app_role: "admin" | "user"
       birth_type: "vaginal" | "c_section" | "prefer_not_to_say"
       equipment_access: "full_gym" | "dumbbells_only" | "bodyweight_only"
       exercise_equipment:
@@ -561,6 +638,7 @@ export type CompositeTypes<
 export const Constants = {
   public: {
     Enums: {
+      app_role: ["admin", "user"],
       birth_type: ["vaginal", "c_section", "prefer_not_to_say"],
       equipment_access: ["full_gym", "dumbbells_only", "bodyweight_only"],
       exercise_equipment: [

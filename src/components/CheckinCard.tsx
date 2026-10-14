@@ -1,4 +1,5 @@
 import { PAIN_AREAS, parsePainAreas } from "@/lib/plan-rules";
+import { track } from "@/lib/analytics";
 import { useEffect, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import {
@@ -90,6 +91,7 @@ export function CheckinCard() {
         notes: notes.trim() ? notes.trim() : null,
       }),
     onSuccess: async () => {
+      void track("checkin_saved");
       await queryClient.invalidateQueries({ queryKey: ["checkin", date] });
       setEditing(false);
     },

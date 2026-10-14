@@ -2,6 +2,7 @@ import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useQueryClient } from "@tanstack/react-query";
 import { useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
+import { track } from "@/lib/analytics";
 import { ChoiceList } from "@/components/ChoiceList";
 import {
   EMPTY_POSTPARTUM,
@@ -215,6 +216,8 @@ function Onboarding() {
       setError("We couldn't save that. Please try again.");
       return;
     }
+    void track("onboarding_completed");
+    if (answers.pp.postpartum) void track("postpartum_mode_on");
     await queryClient.invalidateQueries({ queryKey: ["profile"] });
     navigate({ to: "/today", replace: true });
   }
