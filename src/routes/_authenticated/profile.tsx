@@ -316,6 +316,11 @@ function ProfilePage() {
         <p className="pt-1 text-center text-xs text-muted-foreground">
           LiftLog gives general fitness guidance, not medical advice.
         </p>
+        {adminCheck?.admin ? (
+          <Link to="/admin" className="block text-center text-sm font-semibold text-primary">
+            Admin
+          </Link>
+        ) : null}
         <Link to="/privacy" className="block text-center text-sm text-muted-foreground underline">
           Privacy
         </Link>

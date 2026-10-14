@@ -27,6 +27,13 @@ function Privacy() {
             you log. Text you send for workout parsing is processed by an AI service to fill in the
             review card.
           </p>
+          <p className="mt-2 text-muted-foreground">
+            We also record simple usage events inside LiftLog (for example "check-in saved" or
+            "plan generated", with counts only) to see which features help. These never include
+            your notes, pain areas, postpartum answers or other health details, and no outside
+            analytics company receives them. If you send feedback, we store your rating and
+            message. Only the LiftLog owner can read feedback and usage totals.
+          </p>
         </section>
         <section>
           <h2 className="font-semibold">Private to you</h2>
@@ -40,7 +47,8 @@ function Privacy() {
           <p className="mt-1 text-muted-foreground">
             Go to Profile and tap "Delete my account and data". Deletion is permanent and happens
             immediately in the app: your account and everything you've stored, including anything
-            you had hidden, is removed. Copies in database backups are cleared as the backup
+            you had hidden, plus your usage events and feedback, is removed. Copies in database
+            backups are cleared as the backup
             provider rotates its backups on its normal schedule.
           </p>
         </section>
