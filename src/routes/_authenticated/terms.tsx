@@ -1,6 +1,7 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
+import { track } from "@/lib/analytics";
 
 export const Route = createFileRoute("/_authenticated/terms")({
   head: () => ({
@@ -31,6 +32,7 @@ function Terms() {
       .upsert({ id: data.user.id, accepted_terms_at: new Date().toISOString() }, { onConflict: "id" });
     setSaving(false);
     if (saveError) return setError("We couldn't save that. Please try again.");
+    void track("signed_up");
     navigate({ to: "/onboarding", replace: true });
   }
 

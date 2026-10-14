@@ -215,6 +215,8 @@ function Onboarding() {
       setError("We couldn't save that. Please try again.");
       return;
     }
+    void track("onboarding_completed");
+    if (answers.pp.postpartum) void track("postpartum_mode_on");
     await queryClient.invalidateQueries({ queryKey: ["profile"] });
     navigate({ to: "/today", replace: true });
   }

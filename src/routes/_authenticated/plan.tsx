@@ -7,6 +7,7 @@ import { DemoVideo } from "@/components/DemoVideo";
 
 import { EmptyState, ErrorState, LoadingBlock } from "@/components/ScreenState";
 import { localDateString } from "@/lib/checkins";
+import { track } from "@/lib/analytics";
 import { POSTPARTUM_BLOCK_MESSAGE, postpartumStatus } from "@/lib/plan-rules";
 import { postpartumInfoFrom, profileQueryOptions } from "@/lib/profile";
 import { approvePlan, discardPlan, recommendPlan } from "@/lib/plans.functions";
@@ -87,7 +88,8 @@ function PlanPage() {
   const recommend = useMutation({
     mutationFn: (scope: "day" | "week") =>
       recommendFn({ data: { today: localDateString(), scope } }),
-    onSuccess: () => {
+    onSuccess: (_result, scope) => {
+      void track("plan_generated", { scope });
       setChoosingScope(false);
       setShowApproved(false);
       invalidate();
