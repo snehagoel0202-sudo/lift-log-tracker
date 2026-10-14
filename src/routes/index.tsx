@@ -1,5 +1,6 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
+import { DELETED_FLAG } from "@/components/DeleteAccountDialog";
 import { supabase } from "@/integrations/supabase/client";
 
 export const Route = createFileRoute("/")({
@@ -23,6 +24,14 @@ export const Route = createFileRoute("/")({
 
 function Welcome() {
   const navigate = useNavigate();
+  const [deleted, setDeleted] = useState(false);
+
+  useEffect(() => {
+    if (sessionStorage.getItem(DELETED_FLAG)) {
+      sessionStorage.removeItem(DELETED_FLAG);
+      setDeleted(true);
+    }
+  }, []);
 
   useEffect(() => {
     supabase.auth.getSession().then(({ data }) => {
@@ -36,6 +45,11 @@ function Welcome() {
 
   return (
     <div className="flex min-h-screen flex-col items-center justify-center bg-background px-6 py-12 text-center">
+      {deleted ? (
+        <p role="status" className="mb-6 rounded-xl border border-border bg-card px-4 py-3 text-sm text-foreground">
+          Your account and data have been deleted.
+        </p>
+      ) : null}
       <img
         src="/app-icon-192.png"
         alt="LiftLog"

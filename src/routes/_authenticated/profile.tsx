@@ -6,6 +6,7 @@ import { AppScreen } from "@/components/AppScreen";
 import { ChoiceList } from "@/components/ChoiceList";
 import { currentWeeksSinceBirth } from "@/lib/plan-rules";
 import { localDateString } from "@/lib/checkins";
+import { DeleteAccountDialog } from "@/components/DeleteAccountDialog";
 import { LoadingBlock } from "@/components/ScreenState";
 import {
   PostpartumFields,
@@ -292,6 +293,8 @@ function ProfilePage() {
         >
           Sign out
         </button>
+
+        <DeleteAccountDialog />
 
         <p className="pt-1 text-center text-xs text-muted-foreground">
           LiftLog gives general fitness guidance, not medical advice.

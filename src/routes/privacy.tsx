@@ -38,8 +38,10 @@ function Privacy() {
         <section>
           <h2 className="font-semibold">Deleting it</h2>
           <p className="mt-1 text-muted-foreground">
-            Go to Profile and tap "Delete my account and data". That removes your account and
-            everything you've stored, permanently.
+            Go to Profile and tap "Delete my account and data". Deletion is permanent and happens
+            immediately in the app: your account and everything you've stored, including anything
+            you had hidden, is removed. Copies in database backups are cleared as the backup
+            provider rotates its backups on its normal schedule.
           </p>
         </section>
         <Link to="/" className="inline-block text-sm font-semibold text-primary">
