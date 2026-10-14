@@ -10,7 +10,66 @@ export type PlanExercise = {
   equipment: "barbell" | "dumbbell" | "machine" | "cable" | "bodyweight";
   is_compound: boolean;
   weight_step: number;
+  impact_level?: "low" | "moderate" | "high";
+  postpartum_safe?: boolean;
 };
+
+export type BirthType = "vaginal" | "c_section" | "prefer_not_to_say";
+
+export type PostpartumInfo = {
+  postpartum: boolean;
+  weeks_since_birth: number | null;
+  /** Local date the weeks value was entered, so it keeps counting up. */
+  weeks_recorded_on: string | null;
+  birth_type: BirthType | null;
+  cleared: boolean | null;
+  cleared_on: string | null;
+};
+
+export type PostpartumStatus =
+  | { mode: "off" }
+  | { mode: "blocked"; reason: "not_cleared" | "too_early" }
+  | { mode: "active"; earlyPhase: boolean };
+
+export const POSTPARTUM_BLOCK_MESSAGE =
+  "Check with your doctor or a women's health physio before starting. You can still log anything you do.";
+export const POSTPARTUM_WARNING_NOTE =
+  "Stop and check with a professional if you notice leaking, heaviness in the pelvis, doming of the belly, pain, or bleeding.";
+
+function toDate(value: string) {
+  const [y, m, d] = value.split("-").map(Number);
+  return new Date(y!, (m ?? 1) - 1, d ?? 1);
+}
+
+function daysBetween(from: string, to: string) {
+  return Math.round((toDate(to).getTime() - toDate(from).getTime()) / 86_400_000);
+}
+
+/** Minimum weeks after birth before a strength plan. C-section (and unknown) waits longer. */
+export function minimumWeeks(birthType: BirthType | null) {
+  return birthType === "vaginal" ? 6 : 8;
+}
+
+export function currentWeeksSinceBirth(info: PostpartumInfo, today: string) {
+  if (info.weeks_since_birth == null) return null;
+  const extra = info.weeks_recorded_on
+    ? Math.max(0, Math.floor(daysBetween(info.weeks_recorded_on, today) / 7))
+    : 0;
+  return info.weeks_since_birth + extra;
+}
+
+export function postpartumStatus(info: PostpartumInfo | null, today: string): PostpartumStatus {
+  if (!info?.postpartum) return { mode: "off" };
+  if (info.cleared !== true) return { mode: "blocked", reason: "not_cleared" };
+  const weeks = currentWeeksSinceBirth(info, today);
+  if (weeks == null || weeks < minimumWeeks(info.birth_type)) {
+    return { mode: "blocked", reason: "too_early" };
+  }
+  // First 4 plan weeks after clearance: plan weeks start on Monday.
+  const clearedWeek = weekStartFrom(info.cleared_on ?? today);
+  const earlyPhase = daysBetween(clearedWeek, weekStartFrom(today)) < 28;
+  return { mode: "active", earlyPhase };
+}
 
 export type HistorySet = {
   weight: number | null;
@@ -211,10 +270,21 @@ export function buildPlan(input: {
   exercises: PlanExercise[];
   historyByExercise: Record<string, HistorySet[]>;
   checkin: CheckinSnapshot | null;
+  postpartum?: PostpartumInfo | null;
 }): PlanDraft {
+  const pp = postpartumStatus(input.postpartum ?? null, input.today);
+  if (pp.mode === "blocked") {
+    throw new Error("Postpartum: no strength plan until cleared");
+  }
+  const postpartumOn = pp.mode === "active";
+  const earlyPostpartum = pp.mode === "active" && pp.earlyPhase;
   const allowed = allowedEquipment(input.equipment);
   const pool = input.exercises
     .filter((exercise) => allowed.includes(exercise.equipment))
+    .filter(
+      (exercise) =>
+        !postpartumOn || (exercise.postpartum_safe === true && exercise.impact_level === "low"),
+    )
     .sort((a, b) => Number(b.is_compound) - Number(a.is_compound) || a.name.localeCompare(b.name));
 
   const split = splitForDays(input.daysPerWeek ?? 3);
@@ -226,7 +296,7 @@ export function buildPlan(input: {
   );
   const sore = Boolean(checkin && (checkin.soreness ?? 0) >= 4);
   const pain = Boolean(checkin?.pain);
-  const allowIncrease = !lowReadiness && !pain;
+  const allowIncrease = !lowReadiness && !pain && !earlyPostpartum;
 
   if (lowReadiness) notes.push("Sleep or energy is low, so this week starts with one set less per exercise and no weight increases.");
   if (sore) notes.push("You're sore, so each day is one exercise shorter.");
@@ -236,6 +306,11 @@ export function buildPlan(input: {
     );
   }
 
+  if (earlyPostpartum) {
+    notes.push("You're in your first 4 weeks back, so sets are capped at 2 and weights stay the same.");
+  }
+  if (postpartumOn) notes.push(POSTPARTUM_WARNING_NOTE);
+
   const perDay = 5;
   const days: PlanDayDraft[] = split.map((day, index) => {
     let picks = pickForDay(day.groups, pool, perDay, index);
@@ -244,7 +319,8 @@ export function buildPlan(input: {
     const items: PlanItemDraft[] = picks.map((exercise) => {
       const history = input.historyByExercise[exercise.id] ?? [];
       const progress = progression(exercise, history, allowIncrease);
-      const sets = Math.max(1, lowReadiness ? 2 : 3);
+      let sets = Math.max(1, lowReadiness ? 2 : 3);
+      if (earlyPostpartum) sets = Math.min(sets, 2);
       return {
         exercise_id: exercise.id,
         exercise_name: exercise.name,

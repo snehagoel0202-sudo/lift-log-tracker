@@ -4,6 +4,13 @@ export type Goal = "strength" | "build_muscle" | "lose_fat" | "general_fitness";
 export type Experience = "beginner" | "intermediate" | "advanced";
 export type Equipment = "full_gym" | "dumbbells_only" | "bodyweight_only";
 export type Unit = "kg" | "lb";
+export type BirthType = "vaginal" | "c_section" | "prefer_not_to_say";
+
+export const BIRTH_TYPES: { value: BirthType; label: string }[] = [
+  { value: "vaginal", label: "Vaginal" },
+  { value: "c_section", label: "C-section" },
+  { value: "prefer_not_to_say", label: "Prefer not to say" },
+];
 
 export const GOALS: { value: Goal; label: string; hint: string }[] = [
   { value: "strength", label: "Get stronger", hint: "Heavier lifts, lower reps" },
@@ -43,10 +50,28 @@ export type Profile = {
   session_minutes: number | null;
   equipment: Equipment | null;
   weight_unit: Unit;
+  postpartum: boolean;
+  postpartum_weeks_since_birth: number | null;
+  postpartum_weeks_recorded_on: string | null;
+  postpartum_birth_type: BirthType | null;
+  postpartum_cleared: boolean | null;
+  postpartum_cleared_on: string | null;
 };
 
+export function postpartumInfoFrom(profile: Profile | null | undefined) {
+  if (!profile) return null;
+  return {
+    postpartum: profile.postpartum,
+    weeks_since_birth: profile.postpartum_weeks_since_birth,
+    weeks_recorded_on: profile.postpartum_weeks_recorded_on,
+    birth_type: profile.postpartum_birth_type,
+    cleared: profile.postpartum_cleared,
+    cleared_on: profile.postpartum_cleared_on,
+  };
+}
+
 const COLUMNS =
-  "id, display_name, goal, experience, days_per_week, session_minutes, equipment, weight_unit, onboarded_at";
+  "id, display_name, goal, experience, days_per_week, session_minutes, equipment, weight_unit, onboarded_at, postpartum, postpartum_weeks_since_birth, postpartum_weeks_recorded_on, postpartum_birth_type, postpartum_cleared, postpartum_cleared_on";
 
 export async function fetchProfile() {
   const { data: userData } = await supabase.auth.getUser();

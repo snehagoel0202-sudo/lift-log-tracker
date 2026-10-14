@@ -4,6 +4,12 @@ import { useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { ChoiceList } from "@/components/ChoiceList";
 import {
+  EMPTY_POSTPARTUM,
+  PostpartumFields,
+  postpartumColumns,
+  type PostpartumAnswers,
+} from "@/components/PostpartumFields";
+import {
   DAYS,
   EQUIPMENT,
   EXPERIENCES,
@@ -38,6 +44,7 @@ type Answers = {
   session_minutes: number | null;
   equipment: Equipment | null;
   weight_unit: Unit;
+  pp: PostpartumAnswers;
 };
 
 function Onboarding() {
@@ -54,6 +61,7 @@ function Onboarding() {
     session_minutes: null,
     equipment: null,
     weight_unit: "kg",
+    pp: EMPTY_POSTPARTUM,
   });
 
   const steps = [
@@ -143,6 +151,17 @@ function Onboarding() {
       ),
     },
     {
+      title: "Are you postpartum?",
+      subtitle: "Optional. This keeps plans gentle and low-impact. Skip if it doesn't apply.",
+      canContinue: true,
+      body: (
+        <PostpartumFields
+          value={answers.pp}
+          onChange={(pp) => setAnswers((a) => ({ ...a, pp }))}
+        />
+      ),
+    },
+    {
       title: "Which unit do you lift in?",
       subtitle: "Weights are always saved in the unit you enter.",
       canContinue: true,
@@ -186,6 +205,7 @@ function Onboarding() {
         session_minutes: answers.session_minutes,
         equipment: answers.equipment,
         weight_unit: answers.weight_unit,
+        ...postpartumColumns(answers.pp, null),
         onboarded_at: new Date().toISOString(),
       },
       { onConflict: "id" },
