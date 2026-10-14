@@ -358,7 +358,7 @@ export function buildPlan(input: {
   }
   if (pain) {
     notes.push(
-      `Rest the ${checkin?.pain_area?.trim() || "painful area"} and keep weights where they are. Take it easy today. If the pain is sharp or doesn't go away, check with a professional.`,
+      `Rest the ${checkin?.pain_area?.trim().toLowerCase() || "painful area"} and keep weights where they are. Take it easy today. If the pain is sharp or doesn't go away, check with a professional.`,
     );
   }
 
