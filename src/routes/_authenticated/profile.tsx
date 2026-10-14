@@ -7,6 +7,8 @@ import { ChoiceList } from "@/components/ChoiceList";
 import { currentWeeksSinceBirth } from "@/lib/plan-rules";
 import { localDateString } from "@/lib/checkins";
 import { DeleteAccountDialog } from "@/components/DeleteAccountDialog";
+import { FeedbackDialog } from "@/components/FeedbackDialog";
+import { track } from "@/lib/analytics";
 import { LoadingBlock } from "@/components/ScreenState";
 import {
   PostpartumFields,
@@ -112,6 +114,7 @@ function ProfilePage() {
       setError("We couldn't save your changes. Please try again.");
       return;
     }
+    if (draft.pp.postpartum && !profile?.postpartum) void track("postpartum_mode_on");
     await queryClient.invalidateQueries({ queryKey: ["profile"] });
     setDraft(null);
     setEditing(false);
@@ -293,6 +296,15 @@ function ProfilePage() {
         >
           Sign out
         </button>
+
+        <button
+          type="button"
+          onClick={() => setFeedbackOpen(true)}
+          className="min-h-12 w-full rounded-xl border border-border px-4 font-semibold text-foreground"
+        >
+          Send feedback
+        </button>
+        <FeedbackDialog open={feedbackOpen} onOpenChange={setFeedbackOpen} />
 
         <DeleteAccountDialog />
 
