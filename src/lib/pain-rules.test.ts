@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { buildPlan, parsePainAreas, type PlanExercise } from "./plan-rules";
+import { buildPlan, loadsPainArea, parsePainAreas, type PlanExercise } from "./plan-rules";
 
 const ex = (
   id: string,
@@ -60,12 +60,12 @@ describe("pain area rules", () => {
     it(`${area} removes all core and anything above low impact`, () => {
       const p = picked(area);
       for (const id of ["plank", "jump", "step-up"]) expect(p.has(id)).toBe(false);
-      expect(p.has("squat")).toBe(true);
+      expect(loadsPainArea(exercises[0]!, parsePainAreas(area))).toBe(false);
     });
   }
 
   it("Other removes nothing but keeps the see-a-professional note", () => {
-    expect(picked("Other").has("squat")).toBe(true);
+    expect(exercises.some((e) => loadsPainArea(e, ["Other"]))).toBe(false);
     const plan = buildPlan({
       today: "2026-10-14", daysPerWeek: 3, equipment: "full_gym", exercises, historyByExercise: {},
       checkin: { sleep: 4, energy: 4, soreness: 1, pain: true, pain_area: "Other" },
@@ -74,6 +74,6 @@ describe("pain area rules", () => {
   });
 
   it("removes nothing when pain is No", () => {
-    expect(picked("Knee", false).has("squat")).toBe(true);
+    expect(picked("Knee", false)).toEqual(picked(null, false));
   });
 });
