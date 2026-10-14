@@ -6,11 +6,18 @@ import { AppScreen } from "@/components/AppScreen";
 import { ChoiceList } from "@/components/ChoiceList";
 import { LoadingBlock } from "@/components/ScreenState";
 import {
+  PostpartumFields,
+  answersFromProfile,
+  postpartumColumns,
+  type PostpartumAnswers,
+} from "@/components/PostpartumFields";
+import {
   DAYS,
   EQUIPMENT,
   EXPERIENCES,
   GOALS,
   SESSION_MINUTES,
+  BIRTH_TYPES,
   labelFor,
   profileQueryOptions,
   type Equipment,
@@ -42,6 +49,7 @@ type Draft = {
   session_minutes: number | null;
   equipment: Equipment | null;
   weight_unit: Unit;
+  pp: PostpartumAnswers;
 };
 
 function Row({ label, value }: { label: string; value: string }) {
@@ -74,6 +82,7 @@ function ProfilePage() {
       session_minutes: profile.session_minutes,
       equipment: profile.equipment,
       weight_unit: profile.weight_unit,
+      pp: answersFromProfile(profile),
     });
   }, [editing, draft, profile]);
 
@@ -91,6 +100,7 @@ function ProfilePage() {
         session_minutes: draft.session_minutes,
         equipment: draft.equipment,
         weight_unit: draft.weight_unit,
+        ...postpartumColumns(draft.pp, profile),
       })
       .eq("id", data.userId);
     setSaving(false);
@@ -188,6 +198,13 @@ function ProfilePage() {
               />
             </EditBlock>
 
+            <EditBlock title="POSTPARTUM">
+              <PostpartumFields
+                value={draft.pp}
+                onChange={(pp) => setDraft({ ...draft, pp })}
+              />
+            </EditBlock>
+
             {error ? <p className="text-sm text-destructive">{error}</p> : null}
 
             <div className="flex gap-3">
@@ -234,6 +251,24 @@ function ProfilePage() {
                 />
                 <Row label="Equipment" value={labelFor(EQUIPMENT, profile?.equipment)} />
                 <Row label="Weight unit" value={(profile?.weight_unit ?? "kg").toUpperCase()} />
+                <Row label="Postpartum" value={profile?.postpartum ? "Yes" : "No"} />
+                {profile?.postpartum ? (
+                  <>
+                    <Row
+                      label="Weeks since birth"
+                      value={
+                        profile.postpartum_weeks_since_birth == null
+                          ? "Not set"
+                          : `${profile.postpartum_weeks_since_birth} (when entered)`
+                      }
+                    />
+                    <Row label="Birth type" value={labelFor(BIRTH_TYPES, profile.postpartum_birth_type)} />
+                    <Row
+                      label="Cleared for exercise"
+                      value={profile.postpartum_cleared ? "Yes" : "Not yet"}
+                    />
+                  </>
+                ) : null}
               </div>
             </section>
 

@@ -7,6 +7,8 @@ import { DemoVideo } from "@/components/DemoVideo";
 
 import { EmptyState, ErrorState, LoadingBlock } from "@/components/ScreenState";
 import { localDateString } from "@/lib/checkins";
+import { POSTPARTUM_BLOCK_MESSAGE, postpartumStatus } from "@/lib/plan-rules";
+import { postpartumInfoFrom, profileQueryOptions } from "@/lib/profile";
 import { approvePlan, discardPlan, recommendPlan } from "@/lib/plans.functions";
 import {
   approvedPlanQueryOptions,
@@ -68,6 +70,10 @@ function PlanPage() {
   const queryClient = useQueryClient();
   const approved = useQuery(approvedPlanQueryOptions);
   const draft = useQuery(draftPlanQueryOptions);
+  const profileQuery = useQuery(profileQueryOptions);
+  const postpartumBlocked =
+    postpartumStatus(postpartumInfoFrom(profileQuery.data?.profile), localDateString()).mode ===
+    "blocked";
 
   const recommendFn = useServerFn(recommendPlan);
   const approveFn = useServerFn(approvePlan);
@@ -186,7 +192,17 @@ function PlanPage() {
           )}
         </div>
 
-        {!draft.data && !choosingScope ? (
+        {postpartumBlocked ? (
+          <div className="rounded-2xl border border-primary/40 bg-primary/10 p-4">
+            <p className="font-semibold text-foreground">No strength plan yet</p>
+            <p className="mt-1 text-sm text-foreground">{POSTPARTUM_BLOCK_MESSAGE}</p>
+            <Link to="/log" className="mt-3 inline-block text-sm font-semibold text-primary">
+              Go to Log →
+            </Link>
+          </div>
+        ) : null}
+
+        {!postpartumBlocked && !draft.data && !choosingScope ? (
           <button
             type="button"
             onClick={() => setChoosingScope(true)}
