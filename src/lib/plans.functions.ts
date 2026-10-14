@@ -109,6 +109,7 @@ export const recommendPlan = createServerFn({ method: "POST" })
       historyByExercise,
       checkin: checkinRes.data ?? null,
       postpartum,
+      weightUnit: profileRes.data?.weight_unit ?? "kg",
     });
 
     // "day" scope: only the next training day, for when today feels off but the week is fine.
@@ -163,7 +164,7 @@ export const recommendPlan = createServerFn({ method: "POST" })
         rep_min: item.rep_min,
         rep_max: item.rep_max,
         target_weight: item.target_weight,
-        unit: item.target_weight == null ? unit : item.unit,
+        unit: item.unit,
         rationale: rationales[`${day.day_number}-${item.exercise_id}`] ?? item.rationale,
       })),
     );
