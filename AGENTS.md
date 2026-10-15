@@ -13,3 +13,4 @@
 - User data is hide-only (deleted_at) everywhere, except account deletion: `deleteMyAccount` calls the service-role-only SQL function `delete_account_permanently`, which hard-deletes the caller's rows and auth user in one transaction. Why: a self-service deletion must be complete and atomic; don't convert it to a soft delete.
 - Analytics are first-party only: `track()` in `src/lib/analytics.ts` inserts into `events` (insert-own, no user reads); the DB CHECK limits names. Why: no third-party analytics and no health details in props.
 - Admin access is by the `ADMIN_EMAIL` secret checked server-side in `src/lib/admin.functions.ts` before any service-role read. Why: single-owner app, no roles UI needed.
+- Eval grading lives in `src/lib/evals/grade.ts`, shared by `evals/run_evals.ts` and the admin runner (`src/lib/evals.functions.ts`, one category per call, results in service-role-only `eval_runs`). Why: CLI and app must grade identically and avoid request timeouts.

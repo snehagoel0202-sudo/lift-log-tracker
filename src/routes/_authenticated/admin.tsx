@@ -3,6 +3,7 @@ import { useQuery } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { AppScreen } from "@/components/AppScreen";
 import { ErrorState, LoadingBlock } from "@/components/ScreenState";
+import { EvalRunner } from "@/components/EvalRunner";
 import { getAdminStats } from "@/lib/admin.functions";
 
 export const Route = createFileRoute("/_authenticated/admin")({
@@ -70,6 +71,7 @@ function Admin() {
           </div>
         ))}
       </div>
+      <EvalRunner />
     </AppScreen>
   );
 }
