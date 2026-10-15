@@ -68,7 +68,7 @@ function Today() {
   const feedbackPrompt = useWorkoutFeedbackPrompt();
   const historyQuery = useQuery(historyQueryOptions);
   const profileQuery = useQuery(profileQueryOptions);
-  const unit = profileQuery.data?.weight_unit ?? "kg";
+  const unit = profileQuery.data?.profile?.weight_unit ?? "kg";
   const [historyFor, setHistoryFor] = useState<PlanItem | null>(null);
 
   const dayNumber = selectedDay ?? suggestedDay;

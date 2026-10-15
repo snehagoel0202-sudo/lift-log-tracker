@@ -39,7 +39,7 @@ export const Route = createFileRoute("/_authenticated/progress")({
     ],
   }),
   validateSearch: (search: Record<string, unknown>): { exercise?: string } =>
-    typeof search.exercise === "string" ? { exercise: search.exercise } : {},
+    typeof search["exercise"] === "string" ? { exercise: search["exercise"] } : {},
   component: ProgressPage,
 });
 
