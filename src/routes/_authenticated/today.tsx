@@ -11,6 +11,21 @@ import { EmptyState, ErrorState, LoadingBlock } from "@/components/ScreenState";
 import { localDateString } from "@/lib/checkins";
 import { approvedPlanQueryOptions, groupByDay, type PlanItem } from "@/lib/plans";
 import { planSessionsQueryOptions } from "@/lib/workouts";
+import { historyQueryOptions } from "@/lib/history";
+import { profileQueryOptions } from "@/lib/profile";
+import { track } from "@/lib/analytics";
+import {
+  applySameAsLastTime,
+  bestSet,
+  emptyRow,
+  exerciseSessions,
+  formatLastTime,
+  formatSets,
+  shortDate,
+  typeField,
+  type SetRow,
+} from "@/lib/last-time";
+import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
 import { saveWorkout } from "@/lib/workouts.functions";
 
 export const Route = createFileRoute("/_authenticated/today")({
@@ -25,24 +40,9 @@ export const Route = createFileRoute("/_authenticated/today")({
   component: Today,
 });
 
-type SetRow = {
-  done: boolean;
-  weight: string;
-  reps: string;
-  rpe: string;
-  weightEdited: boolean;
-  repsEdited: boolean;
-};
-
 function rowsForItem(item: PlanItem): SetRow[] {
-  return Array.from({ length: item.sets }, () => ({
-    done: false,
-    weight: item.target_weight == null ? "" : String(item.target_weight),
-    reps: String(item.rep_max),
-    rpe: "",
-    weightEdited: false,
-    repsEdited: false,
-  }));
+  // Weight and reps start empty — never pre-filled.
+  return Array.from({ length: item.sets }, emptyRow);
 }
 
 const inputClass =
@@ -66,6 +66,10 @@ function Today() {
   const [reviewing, setReviewing] = useState(false);
   const [savedCount, setSavedCount] = useState<number | null>(null);
   const feedbackPrompt = useWorkoutFeedbackPrompt();
+  const historyQuery = useQuery(historyQueryOptions);
+  const profileQuery = useQuery(profileQueryOptions);
+  const unit = profileQuery.data?.weight_unit ?? "kg";
+  const [historyFor, setHistoryFor] = useState<PlanItem | null>(null);
 
   const dayNumber = selectedDay ?? suggestedDay;
   const items = useMemo(
@@ -78,6 +82,16 @@ function Today() {
     setRows(Object.fromEntries(items.map((item) => [item.id, rowsForItem(item)])));
     setReviewing(false);
   }, [items]);
+
+  const lastByExercise = useMemo(() => {
+    const sessions = historyQuery.data ?? [];
+    return new Map(items.map((item) => [item.exercise_id, exerciseSessions(sessions, item.exercise_id, 5)]));
+  }, [historyQuery.data, items]);
+
+  const shownCount = items.filter((item) => lastByExercise.get(item.exercise_id)?.length).length;
+  useEffect(() => {
+    if (shownCount > 0 && !reviewing) void track("last_time_viewed", { exercises: shownCount });
+  }, [shownCount, dayNumber, reviewing]);
 
   const save = useMutation({
     mutationFn: useServerFn(saveWorkout),
@@ -99,24 +113,23 @@ function Today() {
   function update(itemId: string, index: number, patch: Partial<SetRow>) {
     setSavedCount(null);
     setRows((current) => {
-      const list = [...(current[itemId] ?? [])];
-      const row = { ...list[index]!, ...patch };
-      if (patch.weight !== undefined) row.weightEdited = true;
-      if (patch.reps !== undefined) row.repsEdited = true;
-      list[index] = row;
-      // Carry an edited value down to later sets the user hasn't touched.
-      if (patch.weight !== undefined) {
-        for (let j = index + 1; j < list.length; j++) {
-          if (!list[j]!.weightEdited) list[j] = { ...list[j]!, weight: row.weight };
-        }
-      }
-      if (patch.reps !== undefined) {
-        for (let j = index + 1; j < list.length; j++) {
-          if (!list[j]!.repsEdited) list[j] = { ...list[j]!, reps: row.reps };
-        }
-      }
+      let list = [...(current[itemId] ?? [])];
+      if (patch.weight !== undefined) list = typeField(list, index, "weight", patch.weight);
+      else if (patch.reps !== undefined) list = typeField(list, index, "reps", patch.reps);
+      else list[index] = { ...list[index]!, ...patch };
       return { ...current, [itemId]: list };
     });
+  }
+
+  function sameAsLastTime(item: PlanItem) {
+    const last = lastByExercise.get(item.exercise_id)?.[0];
+    if (!last) return;
+    setSavedCount(null);
+    setRows((current) => ({
+      ...current,
+      [item.id]: applySameAsLastTime(current[item.id] ?? [], last.sets, unit),
+    }));
+    void track("same_as_last_time_used", { sets: last.sets.length });
   }
 
   if (planQuery.isLoading) {
@@ -265,6 +278,37 @@ function Today() {
               </span>
             </div>
 
+            {(() => {
+              const past = lastByExercise.get(item.exercise_id) ?? [];
+              if (!past.length) return null;
+              return (
+                <div className="mt-1">
+                  <p className="text-sm text-muted-foreground">
+                    Last time: {formatLastTime(past[0]!, unit)}
+                  </p>
+                  <div className="mt-2 flex gap-2">
+                    <button
+                      type="button"
+                      onClick={() => sameAsLastTime(item)}
+                      className="h-10 flex-1 rounded-xl border border-border text-sm font-semibold text-foreground"
+                    >
+                      Same as last time
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setHistoryFor(item);
+                        void track("history_opened", { sessions: past.length });
+                      }}
+                      className="h-10 rounded-xl px-4 text-sm font-semibold text-primary"
+                    >
+                      History
+                    </button>
+                  </div>
+                </div>
+              );
+            })()}
+
             <DemoVideo exerciseName={item.exercises?.name} />
 
 
@@ -331,18 +375,7 @@ function Today() {
               onClick={() =>
                 setRows((current) => {
                   const existing = current[item.id] ?? [];
-                  const last = existing[existing.length - 1];
-                  const newRow: SetRow = {
-                    done: false,
-                    weight:
-                      last?.weight ??
-                      (item.target_weight == null ? "" : String(item.target_weight)),
-                    reps: last?.reps ?? String(item.rep_max),
-                    rpe: "",
-                    weightEdited: false,
-                    repsEdited: false,
-                  };
-                  return { ...current, [item.id]: [...existing, newRow] };
+                  return { ...current, [item.id]: [...existing, emptyRow()] };
                 })
               }
               className="mt-3 h-10 w-full rounded-xl border border-border text-sm font-semibold text-foreground"
@@ -362,6 +395,38 @@ function Today() {
         Finish workout ({checked.length} {checked.length === 1 ? "set" : "sets"})
       </button>
       {feedbackPrompt.dialog}
+      <Sheet open={historyFor != null} onOpenChange={(open) => !open && setHistoryFor(null)}>
+        <SheetContent side="bottom" className="max-h-[85vh] overflow-y-auto rounded-t-2xl">
+          <SheetHeader>
+            <SheetTitle>{historyFor?.exercises?.name ?? "Exercise"} — last 5 sessions</SheetTitle>
+          </SheetHeader>
+          <ul className="mt-4 space-y-2">
+            {(historyFor ? lastByExercise.get(historyFor.exercise_id) ?? [] : []).map((session) => {
+              const best = bestSet(session.sets, unit);
+              return (
+                <li key={session.id} className="rounded-xl border border-border px-4 py-3">
+                  <p className="font-semibold text-foreground">{shortDate(session.date)}</p>
+                  <p className="text-sm text-muted-foreground">{formatSets(session.sets, unit)}</p>
+                  {best ? (
+                    <p className="text-sm text-foreground">
+                      Best: {best.weight} {unit} × {best.reps ?? "—"}
+                    </p>
+                  ) : null}
+                </li>
+              );
+            })}
+          </ul>
+          {historyFor ? (
+            <Link
+              to="/progress"
+              search={{ exercise: historyFor.exercise_id }}
+              className="mt-4 flex h-12 items-center justify-center rounded-xl border border-border font-semibold text-foreground"
+            >
+              See chart on Progress
+            </Link>
+          ) : null}
+        </SheetContent>
+      </Sheet>
     </AppScreen>
   );
 }

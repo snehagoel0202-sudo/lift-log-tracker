@@ -10,6 +10,9 @@ export const EVENT_NAMES = [
   "log_corrected",
   "log_saved",
   "plan_generated",
+  "last_time_viewed",
+  "history_opened",
+  "same_as_last_time_used",
 ] as const;
 export type EventName = (typeof EVENT_NAMES)[number];
 

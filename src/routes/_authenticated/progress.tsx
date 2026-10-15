@@ -38,6 +38,8 @@ export const Route = createFileRoute("/_authenticated/progress")({
       { name: "twitter:card", content: "summary" },
     ],
   }),
+  validateSearch: (search: Record<string, unknown>): { exercise?: string } =>
+    typeof search.exercise === "string" ? { exercise: search.exercise } : {},
   component: ProgressPage,
 });
 
@@ -62,7 +64,7 @@ function ProgressPage() {
     return [...ids].sort((a, b) => (nameOf.get(a) ?? "").localeCompare(nameOf.get(b) ?? ""));
   }, [sessions, nameOf]);
 
-  const [selected, setSelected] = useState<string>("");
+  const [selected, setSelected] = useState<string>(Route.useSearch().exercise ?? "");
   const exerciseId = selected || loggedExerciseIds[0] || "";
   const series = useMemo(
     () => (exerciseId ? bestSetsByUnit(sessions, exerciseId) : []),

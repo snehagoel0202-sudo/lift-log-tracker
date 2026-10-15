@@ -13,7 +13,7 @@ const latestMigrationWith = (needle: string) => {
 };
 
 describe("analytics events", () => {
-  it("tracks exactly the eight agreed event names", () => {
+  it("tracks exactly the agreed event names", () => {
     expect([...EVENT_NAMES]).toEqual([
       "signed_up",
       "onboarding_completed",
@@ -23,11 +23,14 @@ describe("analytics events", () => {
       "log_corrected",
       "log_saved",
       "plan_generated",
+      "last_time_viewed",
+      "history_opened",
+      "same_as_last_time_used",
     ]);
   });
 
   it("the database only accepts the same event names", () => {
-    const sql = latestMigrationWith("CREATE TABLE public.events");
+    const sql = latestMigrationWith("'plan_generated'");
     for (const name of EVENT_NAMES) expect(sql).toContain(`'${name}'`);
   });
 
