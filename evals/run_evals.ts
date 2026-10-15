@@ -22,51 +22,10 @@ const args = Object.fromEntries(
 );
 const PARSER = process.env.PARSER_PATH ?? join(here, "../src/lib/log-parse.server.ts");
 
-type Expected = { exercise: string; weight: number | null; unit: string | null; reps: number | null; rpe: number | null };
-type Case = {
-  id: string;
-  category: string;
-  input?: string;
-  current?: unknown[];
-  correction?: string;
-  expect?: Expected[];
-  expect_empty?: boolean;
-  note?: string;
-};
-type Got = { exercise_name: string; weight: number | null; unit: string | null; reps: number | null; rpe: number | null };
+import { grade, resultsMarkdown, type EvalCase as Case, type EvalRow, type Got } from "../src/lib/evals/grade";
 
 const load = (f: string): Case[] =>
   readFileSync(join(here, f), "utf8").trim().split("\n").map((l) => JSON.parse(l));
-
-const normUnit = (u: string | null) => {
-  if (!u) return null;
-  const x = u.toLowerCase();
-  if (x.startsWith("lb") || x.startsWith("pound")) return "lb";
-  if (x.startsWith("kg") || x.startsWith("kilo")) return "kg";
-  return x;
-};
-
-function grade(c: Case, got: Got[]): string[] {
-  const problems: string[] = [];
-  if (c.expect_empty) {
-    if (got.length) problems.push(`expected no sets, got ${got.length}`);
-    return problems;
-  }
-  const exp = c.expect!;
-  if (got.length !== exp.length) problems.push(`expected ${exp.length} sets, got ${got.length}`);
-  exp.forEach((e, i) => {
-    const g = got[i];
-    if (!g) return;
-    const name = g.exercise_name.toLowerCase();
-    for (const word of e.exercise.toLowerCase().split(" "))
-      if (!name.includes(word)) problems.push(`set ${i + 1}: exercise "${g.exercise_name}" should contain "${e.exercise}"`);
-    if (g.weight !== e.weight) problems.push(`set ${i + 1}: weight ${g.weight} ≠ ${e.weight}`);
-    if (normUnit(g.unit) !== e.unit) problems.push(`set ${i + 1}: unit ${g.unit} ≠ ${e.unit}`);
-    if (g.reps !== e.reps) problems.push(`set ${i + 1}: reps ${g.reps} ≠ ${e.reps}`);
-    if (g.rpe !== e.rpe) problems.push(`set ${i + 1}: rpe ${g.rpe} ≠ ${e.rpe}`);
-  });
-  return [...new Set(problems)];
-}
 
 // Fallback: route the app's Lovable-gateway call to OpenAI, keeping the app's prompt untouched.
 if (!process.env.LOVABLE_API_KEY && process.env.OPENAI_API_KEY && !args.selftest) {
@@ -114,7 +73,7 @@ async function main() {
     isUnreadable = (e) => e instanceof mod.ParseUnreadableError;
   }
 
-  const rows: { id: string; category: string; run: number; pass: boolean; problems: string[]; got: Got[] | string }[] = [];
+  const rows: EvalRow[] = [];
   for (const c of cases) {
     for (let run = 1; run <= repeat; run++) {
       let got: Got[] = [];
@@ -131,34 +90,13 @@ async function main() {
   }
   console.log("\n");
 
-  const cats = [...new Set(rows.map((r) => r.category))];
-  const table = cats.map((cat) => {
-    const r = rows.filter((x) => x.category === cat);
-    const p = r.filter((x) => x.pass).length;
-    return { cat, p, n: r.length, pct: Math.round((100 * p) / r.length) };
-  });
-  const total = rows.filter((r) => r.pass).length;
-  const lines = [
-    `# LiftLog parser eval — ${new Date().toISOString().slice(0, 16).replace("T", " ")}`,
-    "",
-    `Model: ${args.selftest ? "selftest (fake perfect model)" : process.env.EVAL_MODEL ?? "app default (openai/gpt-6-astra)"} · Runs per case: ${repeat}`,
-    "",
-    `**Overall: ${total}/${rows.length} (${Math.round((100 * total) / rows.length)}%)**`,
-    "",
-    "| Category | Pass | Rate |",
-    "|---|---|---|",
-    ...table.map((t) => `| ${t.cat} | ${t.p}/${t.n} | ${t.pct}% |`),
-    "",
-    "## Failures",
-    "",
-    ...rows.filter((r) => !r.pass).map((r) => {
-      const c = cases.find((x) => x.id === r.id)!;
-      return `- **${r.id}** (${r.category}) — “${c.input ?? c.correction}”\n  - ${r.problems.join("\n  - ")}`;
-    }),
-  ];
-  console.log(lines.slice(4, 8 + table.length).join("\n"));
+  const model = args.selftest ? "selftest (fake perfect model)" : process.env.EVAL_MODEL ?? "app default (openai/gpt-6-astra)";
+  const md = resultsMarkdown(rows, cases, model, repeat);
+  const lines = md.split("\n");
+  const nCats = new Set(rows.map((r) => r.category)).size;
+  console.log(lines.slice(4, 8 + nCats).join("\n"));
   const stamp = new Date().toISOString().replace(/[:.]/g, "-").slice(0, 16);
-  writeFileSync(join(here, `results-${stamp}.md`), lines.join("\n") + "\n");
+  writeFileSync(join(here, `results-${stamp}.md`), md);
   writeFileSync(join(here, `results-${stamp}.json`), JSON.stringify(rows, null, 2));
   console.log(`\nSaved evals/results-${stamp}.md`);
 }
