@@ -74,6 +74,33 @@ export type Database = {
         }
         Relationships: []
       }
+      eval_runs: {
+        Row: {
+          created_at: string
+          id: string
+          model: string
+          overall_pass: number
+          overall_total: number
+          results: Json
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          model: string
+          overall_pass: number
+          overall_total: number
+          results?: Json
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          model?: string
+          overall_pass?: number
+          overall_total?: number
+          results?: Json
+        }
+        Relationships: []
+      }
       events: {
         Row: {
           created_at: string
