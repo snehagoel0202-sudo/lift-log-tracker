@@ -1,0 +1,2 @@
+ALTER TABLE public.events DROP CONSTRAINT IF EXISTS events_name_check;
+ALTER TABLE public.events ADD CONSTRAINT events_name_check CHECK (name IN ('signed_up','onboarding_completed','postpartum_mode_on','checkin_saved','log_reviewed','log_corrected','log_saved','plan_generated','last_time_viewed','history_opened','same_as_last_time_used'));
