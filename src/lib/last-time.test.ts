@@ -66,6 +66,44 @@ describe("same as last time", () => {
 });
 
 describe("forward-fill", () => {
+  for (const field of ["weight", "reps"] as const) {
+    const autoFlag = field === "weight" ? "weightAuto" : "repsAuto";
+
+    it(`${field}: typing 4 then 40 updates auto-filled sets`, () => {
+      const first = typeField([emptyRow(), emptyRow(), emptyRow()], 0, field, "4");
+      const next = typeField(first, 0, field, "40");
+      expect(next.map((row) => row[field])).toEqual(["40", "40", "40"]);
+      expect(next.map((row) => row[autoFlag])).toEqual([false, true, true]);
+    });
+
+    it(`${field}: backspacing 40 to 4 updates auto-filled sets`, () => {
+      const first = typeField([emptyRow(), emptyRow(), emptyRow()], 0, field, "40");
+      expect(typeField(first, 0, field, "4").map((row) => row[field])).toEqual(["4", "4", "4"]);
+    });
+
+    it(`${field}: manual entry clears the auto flag and is never overwritten`, () => {
+      let rows = typeField([emptyRow(), emptyRow(), emptyRow()], 0, field, "4");
+      rows = typeField(rows, 1, field, "50");
+      expect(rows[1]?.[autoFlag]).toBe(false);
+      expect(typeField(rows, 0, field, "40").map((row) => row[field])).toEqual(["40", "50", "40"]);
+    });
+
+    it(`${field}: ticked auto-filled sets are never overwritten`, () => {
+      const rows = typeField([emptyRow(), emptyRow(), emptyRow()], 0, field, "4");
+      const next = rows.map((row, index) => index === 1 ? { ...row, done: true } : row);
+      expect(typeField(next, 0, field, "40").map((row) => row[field])).toEqual(["40", "4", "40"]);
+    });
+
+    it(`${field}: clearing the source clears only eligible auto-filled fields`, () => {
+      let rows = typeField([emptyRow(), emptyRow(), emptyRow(), emptyRow()], 0, field, "40");
+      rows = typeField(rows, 1, field, "50");
+      rows = rows.map((row, index) => index === 2 ? { ...row, done: true } : row);
+      const next = typeField(rows, 0, field, "");
+      expect(next.map((row) => row[field])).toEqual(["", "50", "50", ""]);
+      expect(next[3]?.[autoFlag]).toBe(false);
+    });
+  }
+
   it("fills only later empty sets, skipping typed and ticked ones", () => {
     const rows = [
       emptyRow(),

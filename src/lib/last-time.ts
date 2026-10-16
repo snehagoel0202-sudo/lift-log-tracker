@@ -100,6 +100,8 @@ export type SetRow = {
   rpe: string;
   weightEdited: boolean;
   repsEdited: boolean;
+  weightAuto: boolean;
+  repsAuto: boolean;
 };
 
 export const emptyRow = (): SetRow => ({
@@ -109,6 +111,8 @@ export const emptyRow = (): SetRow => ({
   rpe: "",
   weightEdited: false,
   repsEdited: false,
+  weightAuto: false,
+  repsAuto: false,
 });
 
 /** Copy last time's weight/reps into empty, unticked, untyped fields. Never ticks a set. */
@@ -126,7 +130,8 @@ export function applySameAsLastTime(rows: SetRow[], last: PastSet[], unit: Unit)
 
 /**
  * The person typed `field` in set `index`. Copy that one field into LATER sets
- * that are still empty, untyped and unticked. Earlier sets are never touched.
+ * that are empty or still auto-filled, untyped and unticked. Clearing the source
+ * clears its auto-filled values too. Earlier sets are never touched.
  */
 export function typeField(
   rows: SetRow[],
@@ -135,13 +140,17 @@ export function typeField(
   value: string,
 ): SetRow[] {
   const flag = field === "weight" ? "weightEdited" : "repsEdited";
+  const autoFlag = field === "weight" ? "weightAuto" : "repsAuto";
   const list = rows.map((r) => ({ ...r }));
-  list[index] = { ...list[index]!, [field]: value, [flag]: true };
-  if (value.trim() === "") return list;
+  const source = list[index];
+  if (!source) return list;
+  list[index] = { ...source, [field]: value, [flag]: true, [autoFlag]: false };
+  const cleared = value.trim() === "";
   for (let j = index + 1; j < list.length; j++) {
-    const r = list[j]!;
-    if (r.done || r[flag] || r[field] !== "") continue;
-    list[j] = { ...r, [field]: value };
+    const r = list[j];
+    if (!r || r.done || r[flag] || (r[field] !== "" && !r[autoFlag])) continue;
+    if (cleared && !r[autoFlag]) continue;
+    list[j] = { ...r, [field]: cleared ? "" : value, [autoFlag]: !cleared };
   }
   return list;
 }
